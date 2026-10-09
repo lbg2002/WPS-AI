@@ -59,6 +59,7 @@ function loadAdapter(overrides = {}) {
   };
   Object.assign(sandbox, overrides);
   sandbox.window = sandbox;
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, "../js/quote-selection.js"), "utf8"), sandbox);
   vm.runInNewContext(adapterJs, sandbox);
   return { sandbox, calls, pane, storage };
 }
@@ -512,4 +513,40 @@ test("adapter 加载后会执行入口页缓存的 ribbon 点击", () => {
   assert.equal(calls.taskPaneUrl, "http://127.0.0.1:3889/taskpane.html");
   assert.equal(pane.Visible, true);
   assert.deepEqual(sandbox.__lingxiRibbonEarlyQueue, []);
+});
+
+
+test("quote Ribbon and ContextMenuText callbacks capture before opening and append without auto-send", async () => {
+  const { sandbox, storage, calls } = loadAdapter();
+  sandbox.Application.ActiveDocument = { FullName: "/tmp/quote.docx", Saved: true };
+  sandbox.Application.Selection = { Text: "first" };
+  sandbox.OnAction({ id: "quick.wps.quoteSelection" });
+  await flushPromises();
+  sandbox.Application.Selection.Text = "second";
+  sandbox.OnAction({ id: "quoteSelectionContext" });
+  await flushPromises();
+  const queue = JSON.parse(storage.get("lingxi_ai_quote_queue_v1"));
+  assert.deepEqual(queue.map((q) => q.text), ["first", "second"]);
+  assert.equal(storage.get("lingxi_ai_pending_action"), undefined);
+  assert.equal(calls.taskPaneUrl, "http://127.0.0.1:3889/taskpane.html");
+  assert.match(wpsRibbonXml, /idMso="ContextMenuText"/);
+  assert.match(wpsRibbonXml, /id="quick.wps.quoteSelection"/);
+  assert.doesNotMatch(pdfRibbonXml, /ContextMenuText|quoteSelection/);
+});
+
+test("quote selection reuses live dialog, and opens selected dialog when none is alive", async () => {
+  const { sandbox, storage, calls } = loadAdapter();
+  sandbox.Application.ActiveDocument = { FullName: "/tmp/quote.docx", Saved: true };
+  sandbox.Application.Selection = { Range: { Text: "dialog quote" } };
+  sandbox.Application.ShowDialog = () => { calls.dialogCount = (calls.dialogCount || 0) + 1; };
+  storage.set("lingxi_ai_pane_mode_v1", "dialog");
+  storage.set("lingxi_ai_quote_live_v1", JSON.stringify({ mode: "dialog", ts: Date.now() }));
+  sandbox.OnAction({ id: "quoteSelectionContext" });
+  await flushPromises();
+  assert.equal(calls.dialogCount, undefined);
+  storage.delete("lingxi_ai_quote_live_v1");
+  sandbox.OnAction({ id: "quick.wps.quoteSelection" });
+  await flushPromises();
+  assert.equal(calls.dialogCount, 1);
+  assert.equal(JSON.parse(storage.get("lingxi_ai_quote_queue_v1")).length, 2);
 });

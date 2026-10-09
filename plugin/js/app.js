@@ -589,6 +589,71 @@
 
   // 当前会话的待发送附件
   let pendingAttachments = [];
+  const quoteDraft = global.WpsAiQuoteSelection.createDraft();
+  let quotePollBusy = false;
+
+  function renderQuotes() {
+    const host = document.getElementById("chatQuotes");
+    if (!host) return;
+    host.textContent = "";
+    const quotes = quoteDraft.list();
+    host.classList.toggle("hidden", !quotes.length);
+    quotes.forEach((quote, index) => {
+      const card = document.createElement("div");
+      card.className = "chat-quote";
+      const details = document.createElement("details"); // collapsed by default
+      const summary = document.createElement("summary");
+      summary.textContent = `${index + 1}. ${quote.text.replace(/\s+/g, " ").slice(0, 80)}${quote.text.length > 80 ? "…" : ""}`;
+      summary.setAttribute("data-no-i18n", "");
+      const full = document.createElement("pre");
+      full.textContent = quote.text;
+      full.setAttribute("data-no-i18n", "");
+      details.append(summary, full);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "chat-quote-remove";
+      remove.textContent = "×";
+      remove.setAttribute("aria-label", i18nT("删除引用"));
+      remove.addEventListener("click", () => { quoteDraft.remove(quote.id); renderQuotes(); });
+      card.append(details, remove);
+      host.appendChild(card);
+    });
+  }
+
+  async function syncQuoteDocument() {
+    const app = await global.WpsAiAddon.getApplication();
+    let key = "";
+    try { key = await global.WpsAiQuoteSelection.documentKey(app); } catch (e) {}
+    const before = quoteDraft.list();
+    quoteDraft.sync(key);
+    if (before.length !== quoteDraft.list().length) renderQuotes();
+    return { app, key };
+  }
+
+  async function consumePendingQuotes() {
+    if (quotePollBusy || isAnyDialogWindow() || isConversationsDialog) return;
+    quotePollBusy = true;
+    try {
+      const { app, key } = await syncQuoteDocument();
+      const storage = app?.PluginStorage;
+      if (!storage?.getItem || !storage?.setItem) return;
+      const mod = global.WpsAiQuoteSelection;
+      const mode = new URLSearchParams(location.search).get("pane") === "dialog" ? "dialog" : "docked";
+      if (global.WpsAiAddon.getPreferredPaneMode(app) !== mode) return;
+      storage.setItem(mod.LIVE_KEY, JSON.stringify({ mode, ts: Date.now() }));
+      const queue = mod.readQueue(storage);
+      const remaining = [];
+      let changed = false;
+      queue.forEach((quote) => {
+        if (quote.docKey !== key) return; // discard stale/cross-document requests
+        if (quote.mode !== mode) { remaining.push(quote); return; }
+        changed = quoteDraft.add(quote, key) || changed;
+      });
+      if (queue.length !== remaining.length) storage.setItem(mod.QUEUE_KEY, JSON.stringify(remaining));
+      if (changed) { activateTab("ai"); renderQuotes(); }
+    } catch (e) { console.warn("[quote-selection]", e?.message || e); }
+    finally { quotePollBusy = false; }
+  }
 
   function genAttachId() {
     return "a-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6);
@@ -8869,6 +8934,7 @@
   // 展示层把 user 消息折叠成「操作盒子」（只显示按钮文字，点开看完整提示词），
   // 模型收到的内容不变（chatHistory 仍是完整 prompt）。
   async function runChatTurn(userInput, turnOpts = {}) {
+    const turnQuotes = turnOpts.quoteSelections || [];
     const quickAction = (turnOpts?.quickAction && String(turnOpts.quickAction.label || "").trim())
       ? { label: String(turnOpts.quickAction.label).trim() }
       : null;
@@ -8898,7 +8964,7 @@
     // 长文改写意图路由：命中「全文/通篇 + 改写/润色…」且当前宿主为 WPS 文字 →
     // 改走长文改写流水线（分节改写 + 预览弹窗 + 双模式落笔），不进普通聊天。
     // 安全阀：这里只生成预览，绝不落笔——真正写回由预览弹窗里的按钮触发。
-    if (!quickAction && pendingAttachments.length === 0 && detectLongRewriteIntent(userInput)) {
+    if (!turnQuotes.length && !quickAction && pendingAttachments.length === 0 && detectLongRewriteIntent(userInput)) {
       if ((currentHostInfo?.host || "") !== "wps") {
         try { currentHostInfo = await global.WpsAiDocument.getHostInfo(); } catch (e) {}
       }
@@ -8919,7 +8985,7 @@
 
     // P2-3 本地能力路由：确定性短指令（保存/跳页/插表/撤销/重做）本地直达，
     // 不调模型——零 token 零延迟。宁可漏不可错：整句锚定 + 带附件不路由。
-    if (!quickAction && pendingAttachments.length === 0) {
+    if (!turnQuotes.length && !quickAction && pendingAttachments.length === 0) {
       let localIntent = null;
       try { localIntent = global.WpsAiLocalIntents?.match?.(userInput, currentHostInfo?.host || ""); } catch (e) {}
       if (localIntent) {
@@ -9002,6 +9068,17 @@
         }
       }
     } catch (e) { /* host 探测失败 fallback 到老路径（registry 兜底） */ }
+
+    if (turnQuotes.length) {
+      const { key } = await syncQuoteDocument();
+      if (!key || turnQuotes.some((quote) => quote.docKey !== key)) {
+        showMessage("文档已切换，引用已清空，请重新选择文本后发送。", "info");
+        return;
+      }
+      userInput = global.WpsAiQuoteSelection.compose(userInput, turnQuotes);
+      turnQuotes.forEach((quote) => quoteDraft.remove(quote.id));
+      renderQuotes();
+    }
 
     // 取走本轮附件，准备组装 user message
     const turnAttachments = pendingAttachments.slice();
@@ -14184,7 +14261,8 @@
 
     els.chatSendBtn.addEventListener("click", async () => {
       const text = els.chatInput.value.trim();
-      if (!text) return;
+      if (!text || chatBusy || _longRewriteRunning) return;
+      const quoteSelections = quoteDraft.list();
       els.chatInput.value = "";
       // 临时模型：override 存在时把 activeChatModel 临时替换本轮用，发送后自动清 override
       // 复原原值，避免"临时"变成"永久"。
@@ -14197,7 +14275,7 @@
         );
       }
       try {
-        await runChatTurn(text);
+        await runChatTurn(text, { quoteSelections });
       } finally {
         if (usingOverride) {
           currentSettings.activeChatModel = savedActive;
@@ -16622,6 +16700,11 @@
   }
 
   function startPendingActionWatcher() {
+    setTimeout(consumePendingQuotes, 200);
+    setInterval(consumePendingQuotes, 800);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) consumePendingQuotes();
+    });
     setTimeout(consumePendingAction, 200);
     setInterval(consumePendingAction, 800);
     document.addEventListener("visibilitychange", () => {

@@ -9,6 +9,8 @@
   //   prompt    — 实际指令
   const QUICK_ACTIONS = {
     wps: [
+      { key: "quoteSelection", label: "引用选区", category: "document", flow: "quoteSelection",
+        prompt: "添加选区引用，等待用户提问。" },
       { key: "helpWrite", label: "帮我写", category: "writing", prefill: true,
         prompt: "请帮我写一段关于 [在这里描述主题，比如：项目复盘的 300 字总结] 的内容。先用 wps_insert_text 插入到当前光标位置（用 markdown 自然成段，会渲染成 Word 原生格式）。" },
       { key: "continue", label: "续写", category: "writing", prefill: true, optionalInput: true,

@@ -29,6 +29,7 @@
           <button id="quick.wps.translate" label="Translate selection" getLabel="GetLabel_quick_wps_translate" size="normal" image="images/icons/translate.png" onAction="OnAction_quick_wps_translate" getImage="GetImage_quick_wps_translate" getEnabled="OnGetEnabled"/>
         </group>
         <group id="lingxi_wps_document" label="Document" getLabel="GetLabel_group_lingxi_wps_document">
+          <button id="quick.wps.quoteSelection" label="Quote selection" getLabel="GetLabel_quick_wps_quoteSelection" size="normal" image="images/icons/document.png" onAction="OnAction_quick_wps_quoteSelection" getImage="GetImage_quick_wps_quoteSelection" getEnabled="OnGetEnabled"/>
           <button id="quick.wps.summary" label="Summarize document" getLabel="GetLabel_quick_wps_summary" size="normal" image="images/icons/document.png" onAction="OnAction_quick_wps_summary" getImage="GetImage_quick_wps_summary" getEnabled="OnGetEnabled"/>
           <button id="quick.wps.mindmap" label="Mind map" getLabel="GetLabel_quick_wps_mindmap" size="normal" image="images/icons/document.png" onAction="OnAction_quick_wps_mindmap" getImage="GetImage_quick_wps_mindmap" getEnabled="OnGetEnabled"/>
           <button id="quick.wps.format" label="AI Format" getLabel="GetLabel_quick_wps_format" size="normal" image="images/icons/document.png" onAction="OnAction_quick_wps_format" getImage="GetImage_quick_wps_format" getEnabled="OnGetEnabled"/>
@@ -46,4 +47,9 @@
       </tab>
     </tabs>
   </ribbon>
+  <contextMenus>
+    <contextMenu idMso="ContextMenuText">
+      <button id="quoteSelectionContext" label="Quote in Lingxi AI" getLabel="GetLabel_quoteSelectionContext" size="normal" image="images/icons/document.png" onAction="OnAction_quoteSelectionContext" getImage="GetImage_quoteSelectionContext" getEnabled="OnGetEnabled"/>
+    </contextMenu>
+  </contextMenus>
 </customUI>

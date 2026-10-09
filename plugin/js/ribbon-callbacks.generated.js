@@ -5,7 +5,7 @@
   const bindImage = global.__lingxiBindRibbonImage;
   const bindLabel = global.__lingxiBindRibbonLabel;
   const trace = global.__lingxiTraceStatic;
-  if (typeof trace === "function") trace("generated.ribbonCallbacks.start", {"host":"wps","count":26});
+  if (typeof trace === "function") trace("generated.ribbonCallbacks.start", {"host":"wps","count":28});
   if (typeof bindAction === "function") bindAction("OnAction_openWpsAiPane", "openWpsAiPane");
   if (typeof bindImage === "function") bindImage("GetImage_openWpsAiPane", "openWpsAiPane");
   if (typeof bindLabel === "function") bindLabel("GetLabel_openWpsAiPane", "打开灵犀AI");
@@ -15,6 +15,9 @@
   if (typeof bindAction === "function") bindAction("OnAction_openWpsAiDialog", "openWpsAiDialog");
   if (typeof bindImage === "function") bindImage("GetImage_openWpsAiDialog", "openWpsAiDialog");
   if (typeof bindLabel === "function") bindLabel("GetLabel_openWpsAiDialog", "独立弹窗");
+  if (typeof bindAction === "function") bindAction("OnAction_quoteSelectionContext", "quoteSelectionContext");
+  if (typeof bindImage === "function") bindImage("GetImage_quoteSelectionContext", "quoteSelectionContext");
+  if (typeof bindLabel === "function") bindLabel("GetLabel_quoteSelectionContext", "引用到灵犀AI");
   if (typeof bindAction === "function") bindAction("OnAction_quick_wps_helpWrite", "quick.wps.helpWrite");
   if (typeof bindImage === "function") bindImage("GetImage_quick_wps_helpWrite", "quick.wps.helpWrite");
   if (typeof bindLabel === "function") bindLabel("GetLabel_quick_wps_helpWrite", "帮我写");
@@ -57,6 +60,9 @@
   if (typeof bindAction === "function") bindAction("OnAction_quick_wps_translate", "quick.wps.translate");
   if (typeof bindImage === "function") bindImage("GetImage_quick_wps_translate", "quick.wps.translate");
   if (typeof bindLabel === "function") bindLabel("GetLabel_quick_wps_translate", "翻译选中");
+  if (typeof bindAction === "function") bindAction("OnAction_quick_wps_quoteSelection", "quick.wps.quoteSelection");
+  if (typeof bindImage === "function") bindImage("GetImage_quick_wps_quoteSelection", "quick.wps.quoteSelection");
+  if (typeof bindLabel === "function") bindLabel("GetLabel_quick_wps_quoteSelection", "引用选区");
   if (typeof bindAction === "function") bindAction("OnAction_quick_wps_summary", "quick.wps.summary");
   if (typeof bindImage === "function") bindImage("GetImage_quick_wps_summary", "quick.wps.summary");
   if (typeof bindLabel === "function") bindLabel("GetLabel_quick_wps_summary", "全文总结");
@@ -92,5 +98,5 @@
   if (typeof bindLabel === "function") bindLabel("GetLabel_group_lingxi_wps_document", "文档");
   if (typeof bindLabel === "function") bindLabel("GetLabel_group_lingxi_wps_image", "图像");
   if (typeof bindLabel === "function") bindLabel("GetLabel_group_lingxi_wps_smart", "智能");
-  if (typeof trace === "function") trace("generated.ribbonCallbacks.done", {"host":"wps","ids":["openWpsAiPane","openWpsAiDocked","openWpsAiDialog","quick.wps.helpWrite","quick.wps.continue","quick.wps.expand","quick.wps.shrink","quick.wps.rewrite","quick.wps.polish","quick.wps.optimize","quick.wps.polishFormal","quick.wps.polishAcademic","quick.wps.polishGov","quick.wps.polishLively","quick.wps.polishCasual","quick.wps.polishAll","quick.wps.translate","quick.wps.summary","quick.wps.mindmap","quick.wps.format","quick.wps.proofread","quick.wps.compliance","quick.wps.qa","quick.wps.image","quick.wps.materialLibrary","quick.wps.suggest"]});
+  if (typeof trace === "function") trace("generated.ribbonCallbacks.done", {"host":"wps","ids":["openWpsAiPane","openWpsAiDocked","openWpsAiDialog","quoteSelectionContext","quick.wps.helpWrite","quick.wps.continue","quick.wps.expand","quick.wps.shrink","quick.wps.rewrite","quick.wps.polish","quick.wps.optimize","quick.wps.polishFormal","quick.wps.polishAcademic","quick.wps.polishGov","quick.wps.polishLively","quick.wps.polishCasual","quick.wps.polishAll","quick.wps.translate","quick.wps.quoteSelection","quick.wps.summary","quick.wps.mindmap","quick.wps.format","quick.wps.proofread","quick.wps.compliance","quick.wps.qa","quick.wps.image","quick.wps.materialLibrary","quick.wps.suggest"]});
 })(window);

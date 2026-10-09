@@ -113,6 +113,10 @@ function buildRibbonCallbackScript(host, qa) {
   const ids = ["openWpsAiPane", "openWpsAiDocked", "openWpsAiDialog"];
   if (host === "wpp") ids.push("lingxiStyleBtn", "lingxiUnifyBtn", "lingxiDeAiBtn");
   const labelById = Object.assign({}, BUILTIN_LABELS);
+  if (host === "wps") {
+    ids.push("quoteSelectionContext");
+    labelById.quoteSelectionContext = "引用到灵犀AI";
+  }
   // 分组 / Tab 的 getLabel 绑定（fnName → 中文原文）
   const extraLabels = [[labelCallbackName("tab.wpsAiTab"), "灵犀AI"], [labelCallbackName("group.lingxiCore"), "灵犀AI"]];
   qa.getRibbonGroups(host).forEach((group) => {
@@ -190,6 +194,15 @@ function buildRibbon(host, qa, translate) {
   lines.push('      </tab>');
   lines.push('    </tabs>');
   lines.push('  </ribbon>');
+  // Best-effort WPS Writer context menu. Linux builds may ignore this extension;
+  // the ordinary Ribbon button is always generated independently above.
+  if (host === "wps") {
+    lines.push('  <contextMenus>');
+    lines.push('    <contextMenu idMso="ContextMenuText">');
+    lines.push(`      <button ${buttonAttrs({ id: "quoteSelectionContext", label: tr("引用到灵犀AI"), size: "normal", iconPath: "images/icons/document.png" })}/>`);
+    lines.push('    </contextMenu>');
+    lines.push('  </contextMenus>');
+  }
   lines.push('</customUI>');
   return lines.join("\n") + "\n";
 }

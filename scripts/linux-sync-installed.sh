@@ -6,7 +6,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 plugin_root="$repo_root/plugin"
-install_dir="${HOME}/.lingxi-ai"
+install_dir="${LINGXI_INSTALL_DIR:-${HOME}/.lingxi-ai}"
 
 [[ -f "$plugin_root/js/app.js" ]] || { echo "Missing plugin source" >&2; exit 1; }
 [[ -d "$install_dir/plugin-wps" ]] || { echo "Missing installed plugin in $install_dir" >&2; exit 1; }
@@ -31,15 +31,22 @@ for file in "${generated[@]}"; do
   cp "$plugin_root/$file" "$temp_dir/$file"
 done
 
-backup_dir="$install_dir/source-backups/$(date +%Y%m%d-%H%M%S)"
-mkdir -p "$backup_dir"
+mkdir -p "$install_dir/source-backups"
+backup_dir="$(mktemp -d "$install_dir/source-backups/$(date +%Y%m%d-%H%M%S-%N)-XXXXXX")"
 
 # Only source-controlled files are replaced. The changed HTML/CSS are also synced. Existing credentials, conversations,
 # SQLite, publish.xml, user systemd unit, installed runtime and proxy stay intact.
 copy_with_backup() {
   local host="$1" file="$2" source="$3"
   local dst="$install_dir/plugin-$host/$file"
-  [[ -f "$dst" ]] || { echo "[SKIP] Missing installed file: $dst" >&2; return; }
+  mkdir -p "$(dirname "$dst")" "$backup_dir/$host"
+  if [[ ! -f "$dst" ]]; then
+    # Track new files so rollback removes them as well as restoring replacements.
+    printf '%s\n' "$file" >> "$backup_dir/$host/.added-files"
+    cp "$source" "$dst"
+    echo "[ADDED] $host/$file"
+    return
+  fi
   mkdir -p "$backup_dir/$host/$(dirname "$file")"
   cp -p "$dst" "$backup_dir/$host/$file"
   cp "$source" "$dst"
@@ -52,6 +59,9 @@ for host in wps et wpp pdf; do
   # Do not use npm run dev: its Linux registration routine overwrites the
   # shared WPS publish.xml and could remove unrelated plugins.
   (cd "$plugin_root" && node tools/gen-ribbon.js "$host")
+  copy_with_backup "$host" "main.js" "$plugin_root/main.js"
+  copy_with_backup "$host" "js/quote-selection.js" "$plugin_root/js/quote-selection.js"
+  copy_with_backup "$host" "js/quick-actions.js" "$plugin_root/js/quick-actions.js"
   copy_with_backup "$host" "taskpane.html" "$plugin_root/taskpane.html"
   copy_with_backup "$host" "css/style.css" "$plugin_root/css/style.css"
   copy_with_backup "$host" "js/app.js" "$plugin_root/js/app.js"

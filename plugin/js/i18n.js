@@ -427,6 +427,11 @@
 
     // 快捷指令 / ribbon 按钮（getLabel 回调与面板快捷 chip 共用）
     "打开灵犀AI": "Open Lingxi AI",
+    "文档已切换，引用已清空，请重新选择文本后发送。": "The document changed. Quotes were cleared; select text again before sending.",
+    "引用选区": "Quote selection",
+    "引用到灵犀AI": "Quote in Lingxi AI",
+    "选区引用": "Selection quotes",
+    "删除引用": "Remove quote",
     "右侧面板": "Docked panel",
     "独立弹窗": "Floating dialog",
     "帮我写": "Help me write",

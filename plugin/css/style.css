@@ -9682,3 +9682,13 @@ body.pure-mode .image-gen-panel.hidden { display: none; }
   .chat-input-toolbar .chat-toolbar-spacer { flex: 0 1 4px; min-width: 0; }
   .chat-input-toolbar .model-select-popup { width: min(300px, calc(100vw - 24px)); }
 }
+
+/* Selection quotes share the composer in both docked and dialog views. */
+.chat-quotes { max-height: 220px; overflow-y: auto; padding: 8px 10px 0; }
+.chat-quote { position: relative; margin-bottom: 6px; padding: 8px 32px 8px 10px;
+  border-radius: 6px; background: #eef0f3; color: #525866; font-size: 12px; }
+.chat-quote summary { cursor: pointer; overflow-wrap: anywhere; }
+.chat-quote pre { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere;
+  font: inherit; max-height: 160px; overflow-y: auto; }
+.chat-quote-remove { position: absolute; top: 5px; right: 6px; background: transparent;
+  border: 0; color: inherit; cursor: pointer; padding: 3px 6px; }

@@ -1087,6 +1087,7 @@
     getAddonApi,
     getApplication,
     getApplicationSync,
+    getPreferredPaneMode,
     getUrlPath,
     toggleTaskPane,
     openTaskPane: toggleTaskPane,
@@ -1130,10 +1131,31 @@
     return getPreferredPaneMode() === "dialog";
   }
 
+  async function quoteSelectionFromRibbon() {
+    try {
+      const app = getApplicationSync() || await getApplication();
+      const quotes = global.WpsAiQuoteSelection;
+      // Capture before opening a WebView moves focus away from the document.
+      const quote = await quotes.capture(app);
+      const mode = getPreferredPaneMode(app);
+      quotes.enqueue(app?.PluginStorage, quote, mode);
+      let live = null;
+      try { live = JSON.parse(readStorageItem(app, quotes.LIVE_KEY) || "null"); } catch (e) {}
+      if (mode === "dialog" && live?.mode === mode && Date.now() - live.ts < 3000) return;
+      ensureTaskPaneVisibleWithApp(app);
+    } catch (e) {
+      try { alert(e?.message || String(e)); } catch (ignored) {}
+    }
+  }
+
   function handleRibbonAction(control) {
     const id = getRibbonControlId(control);
     traceStatic("adapter.OnAction", id);
     debugLog("OnAction", { id, controlType: typeof control });
+    if (id === "quick.wps.quoteSelection" || id === "quoteSelectionContext") {
+      void quoteSelectionFromRibbon();
+      return true;
+    }
     if (id === "openWpsAiPane") {
       // 「打开灵犀AI」使用上次选择的显示方式；Linux 首次默认嵌入右侧。
       if (preferDialogPaneForHost()) return openTaskPaneAsDialog();

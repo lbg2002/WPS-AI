@@ -101,6 +101,7 @@
     "js/providers/image.js",
     "js/openai.js",
     "js/quick-actions.js",
+    "js/quote-selection.js",
     "js/wps-addon-adapter.js",
     "js/markdown-to-word.js",
     "js/preserve-objects.js", // 嵌入对象保留：占位符渲染 / 分区 / 映射（纯函数），须在 hosts/writer.js 前加载
