@@ -96,7 +96,7 @@ case "$ARCH" in
     RPM_ARCH="loongarch64"
     NODE_DIR_NAME=""        # 不带内置 node
     BUNDLE_NODE=0
-    echo "[i] 龙芯架构: 不打包内置 Node,安装时依赖系统 node 18+"
+    echo "[i] 龙芯架构: 不打包内置 Node,安装时依赖系统 node 22.5+（需支持 node:sqlite）"
     ;;
   sw_64|sw64)
     ARCH_NORM="sw_64"
@@ -104,7 +104,7 @@ case "$ARCH" in
     RPM_ARCH="sw_64"
     NODE_DIR_NAME=""
     BUNDLE_NODE=0
-    echo "[i] 申威架构: 不打包内置 Node,安装时依赖系统 node 18+"
+    echo "[i] 申威架构: 不打包内置 Node,安装时依赖系统 node 22.5+（需支持 node:sqlite）"
     ;;
   mips64el|mips64)
     ARCH_NORM="mips64el"
@@ -112,7 +112,7 @@ case "$ARCH" in
     RPM_ARCH="mips64el"
     NODE_DIR_NAME=""
     BUNDLE_NODE=0
-    echo "[i] 旧龙芯 mips64el: 不打包内置 Node,安装时依赖系统 node 18+"
+    echo "[i] 旧龙芯 mips64el: 不打包内置 Node,安装时依赖系统 node 22.5+（需支持 node:sqlite）"
     ;;
   *)
     echo "[X] 不支持的架构: $ARCH (允许 x64/arm64/loongarch64/sw_64/mips64el)"

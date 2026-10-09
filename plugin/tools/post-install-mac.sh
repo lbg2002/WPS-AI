@@ -110,6 +110,7 @@ fi
 
 # ---- 4. 拷服务脚本 ----
 mkdir -p "$TARGET/tools"
+cp "$INSTALL_DIR/plugin/tools/proxy-health-monitor.js" "$TARGET/tools/proxy-health-monitor.js"
 cp "$INSTALL_DIR/plugin/tools/serve-permanent.js" "$TARGET/tools/serve-permanent.js"
 cp "$INSTALL_DIR/plugin/tools/proxy-server.js"   "$TARGET/tools/proxy-server.js"
 cp "$INSTALL_DIR/plugin/tools/mcp-server.js"     "$TARGET/tools/mcp-server.js"

@@ -97,6 +97,7 @@ popd
 
 REM ---- 4. 拷服务脚本 ----
 if not exist "%TARGET%\tools" mkdir "%TARGET%\tools"
+copy /Y "%INSTALL_DIR%\plugin\tools\proxy-health-monitor.js" "%TARGET%\tools\proxy-health-monitor.js"
 copy /Y "%INSTALL_DIR%\plugin\tools\serve-permanent.js" "%TARGET%\tools\serve-permanent.js"
 copy /Y "%INSTALL_DIR%\plugin\tools\service-runner.js"   "%TARGET%\tools\service-runner.js"
 copy /Y "%INSTALL_DIR%\plugin\tools\service-watchdog.ps1" "%TARGET%\tools\service-watchdog.ps1"

@@ -73,7 +73,7 @@ case "$ARCH" in
     ;;
   loongarch64|loongarch|loong64)
     # 龙芯。Loongnix/统信 UOS 龙芯版/银河麒麟龙芯版
-    log "[i] 国产架构 $ARCH,跳过内置 Node,直接用 PATH 上的 node(请确保系统已装 Node 18+)"
+    log "[i] 国产架构 $ARCH,跳过内置 Node,直接用 PATH 上的 node(请确保系统已装 Node 22.5+（需支持 node:sqlite）)"
     NODE_FALLBACK_ONLY=1
     ;;
   mips64el|mips64)
@@ -109,7 +109,7 @@ fi
 
 if [ -z "$NODE_BIN" ]; then
   if ! command -v node >/dev/null 2>&1; then
-    log "[X] 没找到 Node。请装 Node 18+ LTS:"
+    log "[X] 没找到 Node。请装 Node 22.5+（需支持 node:sqlite） LTS:"
     log "    - Ubuntu/Debian/Deepin/UOS/openKylin: sudo apt install nodejs"
     log "    - openEuler/Anolis/银河麒麟服务器/中标麒麟: sudo dnf install nodejs 或 sudo yum install nodejs"
     log "    - 龙芯系统:从 Loongnix 软件源装,或自行下载 loongarch64 二进制"
@@ -157,6 +157,7 @@ fi
 
 # ---- 4. 拷服务脚本 ----
 mkdir -p "$TARGET/tools"
+cp "$INSTALL_DIR/plugin/tools/proxy-health-monitor.js" "$TARGET/tools/proxy-health-monitor.js"
 cp "$INSTALL_DIR/plugin/tools/serve-permanent.js" "$TARGET/tools/serve-permanent.js"
 cp "$INSTALL_DIR/plugin/tools/proxy-server.js"    "$TARGET/tools/proxy-server.js"
 cp "$INSTALL_DIR/plugin/tools/mcp-server.js"      "$TARGET/tools/mcp-server.js"

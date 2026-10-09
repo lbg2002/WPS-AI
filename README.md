@@ -14,6 +14,7 @@
 <p align="center">
   <a href="https://wps-ai.llteac.cn/download"><b>⬇ 下载</b></a> ·
   <a href="#-5-分钟上手">5 分钟上手</a> ·
+  <a href="#-部署与无网安装">部署与无网安装</a> ·
   <a href="#-功能一览">功能一览</a> ·
   <a href="#-项目结构">项目结构</a> ·
   <a href="#-二次开发">二次开发</a> ·
@@ -30,6 +31,17 @@
 </p>
 
 ---
+
+## 本 Fork 的 main 分支
+
+本仓库 `lbg2002/WPS-AI` 的 `main` 已合入 Linux 右侧面板、紧凑聊天工具栏、正文选区引用、后台卡住自动恢复及面板宽度保持修复。
+
+- **正文引用**：选中文本后右键「引用到灵犀AI」，或功能区「引用选区」。多个引用以灰色折叠卡片显示，可展开、删除，发送问题时才附带完整原文；切换文档清空待发送引用。未保存的文档需先保存。
+- **Linux 输入**：默认使用右侧 TaskPane；润色比对、设置等使用面板内弹层。复用面板时保留手动调整的宽度，完全退出 WPS 后新建面板仍用默认宽度。
+- **后台恢复**：静态服务监测自己启动的代理子进程，连续健康检查失败后自动重启。具体卡死触发原因尚未完全定位，恢复会中断当时正在执行的请求。
+- **验证范围**：相关 Node 模拟测试通过；用户已反馈其 Linux 环境侧栏输入、引用和宽度问题得到改善。各 WPS 版本的右键菜单、宿主能力及 Windows/macOS 安装仍需对应环境验证，右键不可用时使用功能区入口。
+
+下方官网安装包属于上游发布，不保证含本 Fork 的修改。要使用这里的 `main`，请按本 README 的部署指南从该分支构建安装包，或同步源码到已有 Linux 安装。
 
 ## ✨ 亮点
 
@@ -66,16 +78,18 @@ WPS 宿主（文字/表格/演示/PDF）
 
 ### 2. 安装
 
-- **Windows**：先临时关掉杀软实时防护 → 双击 setup.exe → 完全退出 WPS → 重开 WPS，ribbon 出现「灵犀AI」标签即成功
+- **Windows**：运行可信来源的 setup.exe → 完全退出 WPS → 重开 WPS，ribbon 出现「灵犀AI」标签即成功
 - **macOS**：**右键 .pkg → 打开**（Gatekeeper 拦未签名包，双击会报错）→ 输系统密码 → 完全退出 WPS → 重开 WPS
+
+- **Linux**：推荐使用带本机架构 Node 的 `.tar.gz` 完整包，解压后以当前桌面用户运行 `bash install.sh`；具体命令见下方部署指南。
 
 详细步骤（卸载 / 升级 / 故障排查 / 安装器构建）见 [INSTALL.md](INSTALL.md)。
 
 ### 3. 配置 AI 模型
 
-1. ribbon 点「打开灵犀AI」→ TaskPane 右侧弹出 → ⚙ 设置（独立弹窗）
+1. 功能区点「右侧面板」→ ⚙ 设置（Linux 在面板内打开）
 2. 「聊天模型」面板 → **+ 新增供应商** → 15 条预设里选一家（baseURL 已预填）
-3. 填 API Key → ⚡ 测试 → 关弹窗 → header 下拉挑模型开聊
+3. 填 API Key → ⚡ 测试 → 关闭设置 → 聊天输入框下方选择模型开聊
 
 **可同时挂多家**：DeepSeek + Anthropic + Codex + Gemini 一起开，下拉里随时切。
 
@@ -102,11 +116,108 @@ WPS 宿主（文字/表格/演示/PDF）
 
 ---
 
+## 📦 部署与无网安装
+
+### 运行方式与前提
+
+插件部署在自己的电脑上，**不需要域名、公网服务器或端口映射**。WPS 从本机 `127.0.0.1:3889` 加载界面，通过本机代理调用模型（默认端口 `3890`，占用时可能回退到其他端口）。请保留本地回环访问。
+
+| 场景 | 是否需要互联网 |
+|---|---|
+| 安装带运行时的完整离线包、打开侧栏、添加/删除引用 | 不需要；先安装可用的 WPS 桌面客户端 |
+| 使用云端模型、OAuth 登录、在线搜索、远程 MCP、在线生图 | 需要能访问对应服务；所发送的问题和引用会交给配置的服务 |
+| 使用本机已准备好的 Ollama 模型 | 模型推理可离线；下载模型和安装器应提前完成 |
+| 使用单位内网模型 | 不需要公网，但须能连接内网模型服务 |
+| 下载更新、模型能力目录、远程图片/模板资源 | 对应功能需要联网，无法据此保证所有功能完全离线 |
+
+Linux 完整包可内置 x64/arm64 Node，目标电脑无需 npm 或 Git。后台代理需要 **Node 22.5+ 且支持 `node:sqlite`**；GitHub 源码 ZIP 不等于完整离线安装包，通常不含 Linux Node。国产其他架构或旧 glibc 系统需另行准备兼容且支持上述能力的 Node，不能只按旧安装器提示安装 Node 18。
+
+### 已有 Linux 安装：更新到 main
+
+保存文档并完全退出所有 WPS 窗口，在你的本地仓库目录执行（有本地改动时先提交或备份）：
+
+```bash
+git fetch origin
+git switch main
+git pull --ff-only
+node --test plugin/test/pane-mode.test.js plugin/test/quote-selection.test.js plugin/test/linux-dialog-routing.test.js plugin/test/ribbon-callbacks.test.js plugin/test/linux-source-sync.test.js
+bash scripts/linux-sync-installed.sh
+systemctl --user restart lingxi-ai.service
+```
+
+此方式需要本地可用的 `node` 生成各宿主功能区。若 PATH 没有 Node，可以先把已安装的内置 Node 所在 `bin` 目录加入 PATH，再执行测试和同步；查看实际服务配置可用 `systemctl --user cat lingxi-ai.service`。没有 systemd 用户服务的安装方式，请退出 WPS，重新登录桌面会话让自启动入口加载更新。
+
+同步脚本备份到 `~/.lingxi-ai/source-backups/`，不覆盖 API Key、会话和 WPS 共享 `publish.xml`。回滚用 `bash scripts/linux-restore-last-sync.sh`，随后重启服务并重开 WPS。更新本 Fork 不要求重装原来的 DEB。
+
+### 全新 Linux 安装：联网电脑准备完整离线包
+
+在一台 **有网的 Linux 构建电脑** 上准备 Git、Node 22.5+、Bash、GNU tar、xz 和基本 coreutils。目标电脑提前安装 WPS。先在目标电脑记录 `uname -m`：`x86_64` 选择 `x64`，`aarch64` 选择 `arm64`。跨架构打包可以，运行效果需在目标系统确认。
+
+```bash
+git clone --branch main https://github.com/lbg2002/WPS-AI.git
+cd WPS-AI
+# 按目标电脑架构修改；与构建电脑的架构可以不同
+LINGXI_ARCH=x64
+bash installer-linux/build.sh --arch "$LINGXI_ARCH" --format tar
+# 构建会下载匹配架构的内置 Node，并带入完整插件与安装脚本
+LINGXI_VERSION=$(node -p "require('./plugin/package.json').version")
+cd dist
+sha256sum "lingxi-ai-${LINGXI_VERSION}-linux-${LINGXI_ARCH}.tar.gz" > SHA256SUMS
+```
+
+此永久安装包的构建与基本运行不需要 `npm install`；不要在无网电脑执行开发模式的 `npm install` / `npm run dev`。构建脚本会清理其 `installer-linux/build/` 临时目录，请勿在该目录放个人文件。
+
+将生成的 **`.tar.gz` 和 `SHA256SUMS` 一起**复制到 U 盘或内网共享，再传到无网电脑。保留该包对应的源码提交号，避免把同版本号的上游旧包与本 Fork 包混用。Windows/macOS 请提前准备对应平台、含运行时的完整安装包，不能使用 Linux 包替代。本 Fork 可在对应平台运行 `node upload-oss/lib/build-installer.js win` / `node upload-oss/lib/build-installer.js mac` 构建；Windows 需先准备 Inno Setup，macOS 需其原生打包工具。构建入口会下载缺失的 Node 运行时；只运行构建命令，无需配置 OSS 或上传。macOS 打包入口和说明见 [installer-mac](installer-mac/README.md)。
+
+### 无网 Linux 电脑：安装完整包
+
+以当前桌面登录用户操作，先保存文档并关闭 WPS。在存放包和校验文件的目录执行；下面以 `1.4.7` / x64 为例，文件名和解压目录按你实际生成的版本替换：
+
+```bash
+sha256sum -c SHA256SUMS
+tar -xzf lingxi-ai-1.4.7-linux-x64.tar.gz
+cd lingxi-ai-1.4.7
+bash install.sh
+```
+
+**这里不需要联网，也不需要 sudo、Git、npm 或在线安装依赖。**目标系统需已有 Bash、tar、基本 Linux 工具及可运行的 WPS；内置 Node 还需与目标系统的架构、glibc 兼容。安装文件默认放入 `~/.local/share/lingxi-ai`，运行文件和日志位于 `~/.lingxi-ai`。先验证校验和及内置 Node（`plugin/runtime/node-linux-x64/bin/node --version`，arm64 换相应目录），若报 GLIBC 错误，应提前准备适配系统的 Node 或更新系统环境。
+
+安装脚本会离线生成四个宿主变体、合并 WPS 插件注册，并设置 systemd 用户服务；没有可用 systemd 时使用桌面自启动。完全退出后重开 WPS，点击「灵犀AI → 右侧面板」。
+
+DEB 是可选方式：有网电脑用 `--format tar,deb` 构建，目标电脑执行 `sudo dpkg -i ./lingxi-ai_1.4.7_amd64.deb`。系统依赖必须预先齐全；无网时不要依赖 `apt install -f` 在线补依赖。对发行版依赖不确定时优先使用上面的完整 tar 包。
+
+### 无网环境使用模型
+
+- **本地 Ollama**：在有网电脑准备目标平台的 Ollama 安装文件，并提前拉取所需模型；将完整模型存储目录连同 manifests/blobs 转移到目标电脑，保持 Ollama 版本和模型格式兼容。官方模型路径说明见 [Ollama FAQ](https://docs.ollama.com/faq)。在无网电脑启动 Ollama 后，用 `ollama list` 确认模型存在；灵犀AI 设置选择 Ollama，Base URL 填 `http://127.0.0.1:11434/v1`，选择已安装且支持工具调用的模型。聊天质量、工具能力和内存需求取决于模型，不保证任意本地模型能执行全部文档工具。
+- **内网模型**：选 OpenAI 兼容供应商，填写内网 Base URL、模型名称和所需密钥。仅能访问内网时不要选择公网 OAuth 或云端 API。
+- **没有可用模型服务**：安装和侧栏仍可用，但不会凭空获得 AI 推理能力；仅复制插件安装包不会包含大模型权重。在线更新、联网搜索、远程图片等功能在无网环境不可用，部分资源刷新会超时。
+
+### 验证与排错
+
+先保存文档，再试中文输入、选区引用、润色比对、接受/取消操作和拖动面板宽度。没有实机验证的 WPS/系统组合，请先用副本文档确认。
+
+```bash
+# 安装采用 systemd 时
+systemctl --user status lingxi-ai.service --no-pager
+# 如果已装 curl，可检查本地界面和代理；3890 以实际日志端口为准
+curl --max-time 3 http://127.0.0.1:3889/wps/manifest.json
+curl --max-time 3 http://127.0.0.1:3890/healthz
+# 需要恢复卡住的后台时
+systemctl --user restart lingxi-ai.service
+tail -n 50 ~/.lingxi-ai/server.log
+```
+
+守护脚本可能在 WPS 全部关闭后停止后台，验证时先打开 WPS；网络完全断开不会让本机回环地址消失。“插件启动中”持续不消失应先查后台健康和日志，不要直接反复重装。日志可能含文件路径等信息，反馈前请清除个人信息。
+
+进一步说明：[Linux 侧栏与输入](docs/linux-docked-taskpane.md)、[选区引用](docs/quote-selection.md)、[安装指南](INSTALL.md)。
+
+---
+
 ## 🧩 功能一览
 
 ### AI 接入
 
-- 同时挂多家 chat provider，header 下拉按 provider 分组随时切
+- 同时挂多家 chat provider，聊天输入框下方的模型列表按 provider 分组随时切
 - **6 类协议原生适配**：Codex / OpenAI Chat Completions / Anthropic Messages / **Gemini** / **Azure OpenAI** / **通用 OpenAI Responses**，外加各家 OpenAI 兼容聚合器 —— 共 15 条预设 + 一条自定义
 - 思考（reasoning）**按到达顺序实时回显**，按 provider 映射 `thinking.budget_tokens` / `reasoning_effort` / `reasoning.effort` / `thinkingConfig`
 - 模型能力图标：🖼 图像 / 📄 PDF / 💡 思考（models.dev 目录 + 名字正则兜底）

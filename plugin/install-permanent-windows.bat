@@ -70,7 +70,9 @@ popd
 REM --- 2. 复制服务脚本 ---
 echo [2/5] 复制常驻服务脚本...
 if not exist "%TARGET%\tools" mkdir "%TARGET%\tools"
+copy /Y "%SRC_DIR%\tools\proxy-health-monitor.js" "%TARGET%\tools\proxy-health-monitor.js" >nul
 copy /Y "%SRC_DIR%\tools\serve-permanent.js" "%TARGET%\tools\serve-permanent.js" >nul
+copy /Y "%SRC_DIR%\tools\pick-node.js" "%TARGET%\tools\pick-node.js" >nul
 copy /Y "%SRC_DIR%\tools\proxy-server.js" "%TARGET%\tools\proxy-server.js" >nul
 echo [OK] 服务脚本已就位
 

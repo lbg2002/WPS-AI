@@ -40,7 +40,9 @@ node tools/build-variants.js --out "$TARGET" --port 3889
 # 2. 拷常驻服务脚本
 echo "[2/5] 复制常驻服务脚本..."
 mkdir -p "$TARGET/tools"
+cp "$SRC_DIR/tools/proxy-health-monitor.js" "$TARGET/tools/proxy-health-monitor.js"
 cp "$SRC_DIR/tools/serve-permanent.js" "$TARGET/tools/serve-permanent.js"
+cp "$SRC_DIR/tools/pick-node.js" "$TARGET/tools/pick-node.js"
 cp "$SRC_DIR/tools/proxy-server.js" "$TARGET/tools/proxy-server.js"
 echo "[OK] 服务脚本已就位"
 
