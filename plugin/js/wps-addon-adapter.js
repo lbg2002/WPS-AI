@@ -115,6 +115,7 @@
   const TASKPANE_STORAGE_KEY = "lingxi_ai_taskpane_id_v11";
   // Linux 默认嵌入右侧；显示方式使用 PluginStorage + localStorage 冗余记忆。
   const PANE_MODE_STORAGE_KEY = "lingxi_ai_pane_mode_v1";
+  const PENDING_SELECTION_QUOTES_KEY = "lingxi_ai_pending_selection_quotes_v1";
 
   // 默认 TaskPane 宽度 —— 按当前显示器 40% 自适应：
   //   - 40% 屏幕宽
@@ -1130,10 +1131,63 @@
     return getPreferredPaneMode() === "dialog";
   }
 
+  function quoteSelectedTextToChat() {
+    const app = getApplicationSync();
+    if (!app || detectHostByApp(app) !== "wps") {
+      try { alert("请先在 WPS 文字正文中选中需要引用的内容。"); } catch (e) {}
+      return true;
+    }
+    // 只读快照：不要使用剪贴板，也不要更改 Selection。
+    let text = "", docPath = "";
+    try { text = String(app.Selection?.Text || app.ActiveWindow?.Selection?.Text || "").trim(); } catch (e) {}
+    try { docPath = String(app.ActiveDocument?.FullName || "").trim(); } catch (e) {}
+    if (!text) {
+      try { alert("请先选中一段正文，再点击「引用到灵犀AI」。"); } catch (e) {}
+      return true;
+    }
+    if (text.length > 20000) {
+      try { alert("一次引用最多 20000 字，请缩小选区。"); } catch (e) {}
+      return true;
+    }
+    // 选择文本不修改文档，允许文档有未保存的正文改动；但需有稳定文件标识。
+    if (!/[/\\]/.test(docPath)) {
+      try { alert("请先将当前文档保存到磁盘，再引用选区。"); } catch (e) {}
+      return true;
+    }
+    const storage = app.PluginStorage;
+    if (!storage?.setItem || !storage?.getItem) {
+      try { alert("当前 WPS 未提供插件共享存储，无法传递引用。"); } catch (e) {}
+      return true;
+    }
+    const ts = Date.now();
+    const item = {
+      id: "quote-" + ts + "-" + Math.random().toString(36).slice(2, 10),
+      text, docPath, ts
+    };
+    try {
+      let queue = [];
+      try { queue = JSON.parse(storage.getItem(PENDING_SELECTION_QUOTES_KEY) || "[]"); } catch (e) {}
+      if (!Array.isArray(queue)) queue = [];
+      // 只保留最近一分钟尚未消费的引用，避免积压和跨文档误投递。
+      queue = queue.filter((q) => q && Number(q.ts) > ts - 60000 && q.docPath === docPath);
+      queue.push(item);
+      storage.setItem(PENDING_SELECTION_QUOTES_KEY, JSON.stringify(queue.slice(-12)));
+    } catch (e) {
+      try { alert("引用暂存失败，请检查 WPS 加载项状态。"); } catch (_) {}
+      return true;
+    }
+    // 若原面板尚未打开，则按当前显示偏好唤起右侧面板或独立弹窗。
+    ensureTaskPaneVisible();
+    return true;
+  }
+
   function handleRibbonAction(control) {
     const id = getRibbonControlId(control);
     traceStatic("adapter.OnAction", id);
     debugLog("OnAction", { id, controlType: typeof control });
+    if (id === "quoteSelectionRibbon" || id === "quoteSelectionContext") {
+      return quoteSelectedTextToChat();
+    }
     if (id === "openWpsAiPane") {
       // 「打开灵犀AI」使用上次选择的显示方式；Linux 首次默认嵌入右侧。
       if (preferDialogPaneForHost()) return openTaskPaneAsDialog();
@@ -1437,7 +1491,7 @@
     const id = getRibbonControlId(control);
     const asPng = (path) => String(path || "images/ai.svg").replace(/\.svg(?:$|\?)/, (match) => match.replace(".svg", ".png"));
     let resolved = "";
-    if (id === "openWpsAiPane" || id === "openWpsAiDocked" || id === "openWpsAiDialog") resolved = "images/ai.png";
+    if (id === "openWpsAiPane" || id === "openWpsAiDocked" || id === "openWpsAiDialog" || id === "quoteSelectionRibbon" || id === "quoteSelectionContext") resolved = "images/ai.png";
     else if (id === "lingxiStyleBtn") resolved = "images/icons/palette.png";
     else if (id === "lingxiUnifyBtn") resolved = "images/icons/wand.png";
     else if (id === "lingxiDeAiBtn") resolved = "images/icons/scrub.png";
