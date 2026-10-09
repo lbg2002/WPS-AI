@@ -787,11 +787,7 @@
             }
           }
           pane.Visible = wantShow;
-          // 每次"显示"时把默认宽度重新写一遍 —— dev 改 pickDefaultTaskPaneWidth 后立刻
-          // 生效；生产用户手动 resize 后下次开会被重置，但开发体验优先。
-          if (wantShow) {
-            try { applyTaskPaneWidth(pane, pickDefaultTaskPaneWidth(), "toggle-reshow"); } catch (e) {}
-          }
+          // Reuse the pane's current width, including the user's manual resize.
           traceStatic("adapter.toggleTaskPane.reuse", `${existingId || ""}:${wantShow}`);
           debugLog("toggleTaskPane.reuse", {
             existingId,
@@ -1372,8 +1368,7 @@
           const pane = getTaskPaneById(taskPaneHost, existingId);
           if (pane) {
             if (!pane.Visible) pane.Visible = true;
-            // ribbon 触发的 ensureTaskPaneVisible 也重新写默认宽度（同 toggleTaskPane 的考量）
-            try { applyTaskPaneWidth(pane, pickDefaultTaskPaneWidth(), "ribbon-reshow"); } catch (e) {}
+            // Quoting and quick actions must not reset an existing pane's width.
             traceStatic("adapter.ensureTaskPaneVisible.reuse", existingId);
             debugLog("ensureTaskPaneVisible.reuse", {
               existingId,

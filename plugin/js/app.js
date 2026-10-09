@@ -16736,6 +16736,8 @@
   const HTML_PREVIEW_PANE_WIDTH = 960;
 
   function tryExpandTaskPaneForPreview() {
+    // Linux uses inline previews for input focus; keep the user's pane width.
+    if (preferInlineWpsDialogs()) return;
     try {
       const pane = global.WpsAiAddon?.getCurrentTaskPane?.();
       if (!pane) return;

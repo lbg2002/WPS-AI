@@ -550,3 +550,36 @@ test("quote selection reuses live dialog, and opens selected dialog when none is
   assert.equal(calls.dialogCount, 1);
   assert.equal(JSON.parse(storage.get("lingxi_ai_quote_queue_v1")).length, 2);
 });
+
+
+test("quote, quick action and pane hide/show preserve manually resized pane without scheduling width resets", async () => {
+  const scheduled = [];
+  const { sandbox, pane, storage } = loadAdapter({
+    navigator: { userAgent: "Linux", platform: "Linux" },
+    setTimeout(fn) { scheduled.push(fn); return scheduled.length; }
+  });
+  sandbox.Application.ActiveDocument = { FullName: "/tmp/width.docx", Saved: true };
+  sandbox.Application.Selection = { Text: "引用原文" };
+  sandbox.WpsAiQuickActions.findByKey = (host, key) => ({ category: "document", host, key, prompt: "润色原文" });
+  sandbox.OnAction("openWpsAiDocked");
+  assert.equal(pane.Width, 600, "new pane receives default width");
+  for (const callback of scheduled.splice(0)) callback();
+  let width = 820;
+  let writes = 0;
+  Object.defineProperty(pane, "Width", { get: () => width, set(value) { writes++; width = value; } });
+  for (const action of ["quoteSelectionContext", "quick.wps.quoteSelection", "quick.wps.polish", "openWpsAiDocked"]) {
+    sandbox.OnAction(action);
+    await flushPromises();
+    assert.equal(pane.Visible, true);
+    assert.equal(width, 820, action);
+  }
+  assert.equal(JSON.parse(storage.get("lingxi_ai_quote_queue_v1")).length, 2);
+  assert.equal(JSON.parse(storage.get("lingxi_ai_pending_action")).key, "polish");
+  sandbox.OnAction("openWpsAiPane");
+  assert.equal(pane.Visible, false);
+  sandbox.OnAction("openWpsAiPane");
+  assert.equal(pane.Visible, true);
+  assert.equal(width, 820);
+  assert.equal(writes, 0, "reusing pane must not assign Width");
+  assert.equal(scheduled.length, 0, "no deferred default-width overwrites");
+});

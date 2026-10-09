@@ -68,3 +68,20 @@ test('Linux routing guards all app native dialog calls, preserves focus/IME brid
   assert.match(code, /if \(!isAnyDialogWindow\(\)\) tryRestoreTaskPaneAfterPreview\(\)/);
   assert.match(code, /installWpsFocusRelease\(\)/);
 });
+
+
+test('Linux inline preview keeps chosen width through open/close; other platforms keep existing expansion behavior', () => {
+  const widthHelpers = code.slice(code.indexOf('  let htmlPreviewOrigPaneWidth = null;'), code.indexOf('  // 父窗口直接操作 iframe DOM'));
+  for (const platform of ['Linux', 'Win32']) {
+    let width = 820;
+    const writes = [];
+    const pane = { get Width() { return width; }, set Width(value) { writes.push(value); width = value; } };
+    const sandbox = { global: { navigator: { platform }, WpsAiAddon: { getCurrentTaskPane: () => pane } } };
+    vm.runInNewContext(helper + widthHelpers, sandbox);
+    sandbox.tryExpandTaskPaneForPreview();
+    assert.equal(width, platform === 'Linux' ? 820 : 960);
+    sandbox.tryRestoreTaskPaneAfterPreview();
+    assert.equal(width, 820);
+    assert.deepEqual(writes, platform === 'Linux' ? [] : [960, 820]);
+  }
+});
