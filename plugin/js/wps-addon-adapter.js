@@ -113,6 +113,8 @@
   // 但用户反馈太宽，砍一半到 40%/[600,1100]（即 v9 参数集）。
   // bump 后强制 WPS 下次重建 pane 拿新宽度。
   const TASKPANE_STORAGE_KEY = "lingxi_ai_taskpane_id_v11";
+  // Linux 默认嵌入右侧；显示方式使用 PluginStorage + localStorage 冗余记忆。
+  const PANE_MODE_STORAGE_KEY = "lingxi_ai_pane_mode_v1";
 
   // 默认 TaskPane 宽度 —— 按当前显示器 40% 自适应：
   //   - 40% 屏幕宽
@@ -608,6 +610,30 @@
     }
   }
 
+  function getPreferredPaneMode(app) {
+    const host = app || getApplicationSync() || global.wps;
+    const stored = readStorageItem(host, PANE_MODE_STORAGE_KEY);
+    if (stored === "dialog" || stored === "docked") return stored;
+    try {
+      const fallback = global.localStorage?.getItem(PANE_MODE_STORAGE_KEY);
+      if (fallback === "dialog" || fallback === "docked") return fallback;
+    } catch (e) {}
+    // macOS 保留独立弹窗旧行为；Linux 和 Windows 默认右侧面板。
+    try {
+      const nav = global.navigator || (typeof navigator !== "undefined" ? navigator : null);
+      const platform = String(nav?.userAgent || "") + " " + String(nav?.platform || "");
+      if (!/Windows|Win32|Win64|WOW64/i.test(platform) && /Mac|Macintosh|Mac OS X|Darwin/i.test(platform)) return "dialog";
+    } catch (e) {}
+    return "docked";
+  }
+
+  function setPreferredPaneMode(mode, app) {
+    if (mode !== "dialog" && mode !== "docked") return false;
+    writeStorageItem(app || getApplicationSync() || global.wps, PANE_MODE_STORAGE_KEY, mode);
+    try { global.localStorage?.setItem(PANE_MODE_STORAGE_KEY, mode); } catch (e) {}
+    return true;
+  }
+
   function clearStorageItem(app, key) {
     try {
       app?.PluginStorage?.removeItem?.(key);
@@ -1099,15 +1125,9 @@
     return handleAddinLoad(ribbonUI);
   };
 
-  // 主面板入口是否改用独立 ShowDialog 浮窗（而非 docked taskpane）：只在能确认是 mac/linux 时才改；
-  // Windows 或识别不出时保持 docked（现状）——避免回归 Windows 上工作正常的停靠面板。
+  // Linux 现在默认使用 CreateTaskPane 右侧嵌入。遇到输入法/焦点异常可切换独立弹窗。
   function preferDialogPaneForHost() {
-    try {
-      const nav = global.navigator || (typeof navigator !== "undefined" ? navigator : null);
-      const s = String((nav && nav.userAgent) || "") + " " + String((nav && nav.platform) || "");
-      if (/Windows|Win32|Win64|WOW64/i.test(s)) return false;
-      return /Mac|Macintosh|Mac OS X|Darwin|Linux|X11|CrOS/i.test(s);
-    } catch (e) { return false; }
+    return getPreferredPaneMode() === "dialog";
   }
 
   function handleRibbonAction(control) {
@@ -1115,11 +1135,30 @@
     traceStatic("adapter.OnAction", id);
     debugLog("OnAction", { id, controlType: typeof control });
     if (id === "openWpsAiPane") {
-      // Mac/Linux 上 docked taskpane 与文档共享 OS 键盘焦点，Cmd+V 会同时进文档造成双份插入，而 jsapi
-      // 没有 ReleaseFocus 可补救（Windows 特有）。这两端改用独立 ShowDialog 浮窗（配合输入框「粘贴」按钮/
-      // 右键粘贴走程序化剪贴板绕开 Cmd+V）。Windows 上 docked taskpane 工作正常、可停靠右侧，保持不变。
+      // 「打开灵犀AI」使用上次选择的显示方式；Linux 首次默认嵌入右侧。
       if (preferDialogPaneForHost()) return openTaskPaneAsDialog();
       return toggleTaskPane();
+    }
+    if (id === "openWpsAiDocked") {
+      setPreferredPaneMode("docked", getApplicationSync());
+      // 只打开不切换，避免从弹窗恢复时误关已有 TaskPane。
+      // 旧 ShowDialog 无可靠的跨窗口关闭 API，用户可手动关闭旧弹窗。
+      return ensureTaskPaneVisible();
+    }
+    if (id === "openWpsAiDialog") {
+      const app = getApplicationSync();
+      const chk = checkActiveDocSavedForAdapter(app);
+      if (!chk.ok) {
+        try { alert(chk.hint); } catch (e) {}
+        return true;
+      }
+      setPreferredPaneMode("dialog", app);
+      // 隐藏右侧面板，不销毁会话或用户设置。
+      try {
+        const pane = getCurrentTaskPane();
+        if (pane) pane.Visible = false;
+      } catch (e) {}
+      return openTaskPaneAsDialog();
     }
 
     // 「文档未保存」拦截：在还没 ensureTaskPaneVisible / writeStorageItem 之前判断，
@@ -1398,7 +1437,7 @@
     const id = getRibbonControlId(control);
     const asPng = (path) => String(path || "images/ai.svg").replace(/\.svg(?:$|\?)/, (match) => match.replace(".svg", ".png"));
     let resolved = "";
-    if (id === "openWpsAiPane") resolved = "images/ai.png";
+    if (id === "openWpsAiPane" || id === "openWpsAiDocked" || id === "openWpsAiDialog") resolved = "images/ai.png";
     else if (id === "lingxiStyleBtn") resolved = "images/icons/palette.png";
     else if (id === "lingxiUnifyBtn") resolved = "images/icons/wand.png";
     else if (id === "lingxiDeAiBtn") resolved = "images/icons/scrub.png";
