@@ -5,6 +5,8 @@
       <tab id="wpsAiTab" label="灵犀AI" getLabel="GetLabel_tab_wpsAiTab" 	insertBeforeMso="TabHome">
         <group id="lingxiCore" label="灵犀AI" getLabel="GetLabel_group_lingxiCore">
           <button id="openWpsAiPane" label="打开灵犀AI" getLabel="GetLabel_openWpsAiPane" size="large" image="images/ai.png" onAction="OnAction_openWpsAiPane" getImage="GetImage_openWpsAiPane" getVisible="OnGetVisible" getEnabled="OnGetEnabled"/>
+          <button id="openWpsAiDocked" label="右侧面板" getLabel="GetLabel_openWpsAiDocked" size="normal" image="images/ai.png" onAction="OnAction_openWpsAiDocked" getImage="GetImage_openWpsAiDocked" getEnabled="OnGetEnabled"/>
+          <button id="openWpsAiDialog" label="独立弹窗" getLabel="GetLabel_openWpsAiDialog" size="normal" image="images/ai.png" onAction="OnAction_openWpsAiDialog" getImage="GetImage_openWpsAiDialog" getEnabled="OnGetEnabled"/>
         </group>
         <group id="lingxi_wps_writing" label="写作" getLabel="GetLabel_group_lingxi_wps_writing">
           <button id="quick.wps.helpWrite" label="帮我写" getLabel="GetLabel_quick_wps_helpWrite" size="normal" image="images/icons/writing.png" onAction="OnAction_quick_wps_helpWrite" getImage="GetImage_quick_wps_helpWrite" getEnabled="OnGetEnabled"/>
