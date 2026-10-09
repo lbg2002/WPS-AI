@@ -7,6 +7,7 @@
           <button id="openWpsAiPane" label="Open Lingxi AI" getLabel="GetLabel_openWpsAiPane" size="large" image="images/ai.png" onAction="OnAction_openWpsAiPane" getImage="GetImage_openWpsAiPane" getVisible="OnGetVisible" getEnabled="OnGetEnabled"/>
           <button id="openWpsAiDocked" label="Docked panel" getLabel="GetLabel_openWpsAiDocked" size="normal" image="images/ai.png" onAction="OnAction_openWpsAiDocked" getImage="GetImage_openWpsAiDocked" getEnabled="OnGetEnabled"/>
           <button id="openWpsAiDialog" label="Floating dialog" getLabel="GetLabel_openWpsAiDialog" size="normal" image="images/ai.png" onAction="OnAction_openWpsAiDialog" getImage="GetImage_openWpsAiDialog" getEnabled="OnGetEnabled"/>
+          <button id="quoteSelectionRibbon" label="Quote selection" getLabel="GetLabel_quoteSelectionRibbon" size="normal" image="images/ai.png" onAction="OnAction_quoteSelectionRibbon" getImage="GetImage_quoteSelectionRibbon" getEnabled="OnGetEnabled"/>
         </group>
         <group id="lingxi_wps_writing" label="Writing" getLabel="GetLabel_group_lingxi_wps_writing">
           <button id="quick.wps.helpWrite" label="Help me write" getLabel="GetLabel_quick_wps_helpWrite" size="normal" image="images/icons/writing.png" onAction="OnAction_quick_wps_helpWrite" getImage="GetImage_quick_wps_helpWrite" getEnabled="OnGetEnabled"/>
@@ -46,4 +47,9 @@
       </tab>
     </tabs>
   </ribbon>
+  <contextMenus>
+    <contextMenu idMso="ContextMenuText">
+      <button id="quoteSelectionContext" label="Quote in Lingxi AI" onAction="OnAction_quoteSelectionContext" getImage="GetImage_quoteSelectionContext" visible="true"/>
+    </contextMenu>
+  </contextMenus>
 </customUI>
