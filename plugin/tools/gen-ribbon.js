@@ -78,7 +78,7 @@ function pngIconPath(iconPath) {
 }
 
 function iconPathForButton(host, qa, id, action, category) {
-  if (id === "openWpsAiPane" || id === "openWpsAiDocked" || id === "openWpsAiDialog") return "images/ai.png";
+  if (id === "openWpsAiPane" || id === "openWpsAiDocked" || id === "openWpsAiDialog" || id === "quoteSelectionRibbon" || id === "quoteSelectionContext") return "images/ai.png";
   if (id === "lingxiStyleBtn") return "images/icons/palette.png";
   if (id === "lingxiUnifyBtn") return "images/icons/wand.png";
   if (id === "lingxiDeAiBtn") return "images/icons/scrub.png";
@@ -106,11 +106,14 @@ function buildRibbonCallbackScript(host, qa) {
     openWpsAiPane: "打开灵犀AI",
     openWpsAiDocked: "右侧面板",
     openWpsAiDialog: "独立弹窗",
+    quoteSelectionRibbon: "引用选区",
+    quoteSelectionContext: "引用到灵犀AI",
     lingxiStyleBtn: "PPT 风格",
     lingxiUnifyBtn: "统一风格",
     lingxiDeAiBtn: "去 AI 味"
   };
   const ids = ["openWpsAiPane", "openWpsAiDocked", "openWpsAiDialog"];
+  if (host === "wps") ids.push("quoteSelectionRibbon", "quoteSelectionContext");
   if (host === "wpp") ids.push("lingxiStyleBtn", "lingxiUnifyBtn", "lingxiDeAiBtn");
   const labelById = Object.assign({}, BUILTIN_LABELS);
   // 分组 / Tab 的 getLabel 绑定（fnName → 中文原文）
@@ -169,6 +172,9 @@ function buildRibbon(host, qa, translate) {
   // 明确的回退入口：输入法/焦点异常时直接使用旧版 ShowDialog 浮窗。
   lines.push(`          <button ${buttonAttrs({ id: "openWpsAiDocked", label: tr("右侧面板"), size: "normal", iconPath: iconPathForButton(host, qa, "openWpsAiDocked") })}/>`);
   lines.push(`          <button ${buttonAttrs({ id: "openWpsAiDialog", label: tr("独立弹窗"), size: "normal", iconPath: iconPathForButton(host, qa, "openWpsAiDialog") })}/>`);
+  if (host === "wps") {
+    lines.push(`          <button ${buttonAttrs({ id: "quoteSelectionRibbon", label: tr("引用选区"), size: "normal", iconPath: iconPathForButton(host, qa, "quoteSelectionRibbon") })}/>`);
+  }
   if (host === "wpp") {
     lines.push(`          <button ${buttonAttrs({ id: "lingxiStyleBtn", label: tr("PPT 风格"), size: "large", iconPath: iconPathForButton(host, qa, "lingxiStyleBtn") })}/>`);
     lines.push(`          <button ${buttonAttrs({ id: "lingxiUnifyBtn", label: tr("统一风格"), size: "large", iconPath: iconPathForButton(host, qa, "lingxiUnifyBtn") })}/>`);
@@ -190,6 +196,14 @@ function buildRibbon(host, qa, translate) {
   lines.push('      </tab>');
   lines.push('    </tabs>');
   lines.push('  </ribbon>');
+  // WPS 文字选中文字时弹出的右键菜单；Linux 兼容性视宿主版本而定。
+  if (host === "wps") {
+    lines.push('  <contextMenus>');
+    lines.push('    <contextMenu idMso="ContextMenuText">');
+    lines.push(`      <button id="quoteSelectionContext" label="${escapeXml(tr("引用到灵犀AI"))}" onAction="${actionCallbackName("quoteSelectionContext")}" getImage="${imageCallbackName("quoteSelectionContext")}" visible="true"/>`);
+    lines.push('    </contextMenu>');
+    lines.push('  </contextMenus>');
+  }
   lines.push('</customUI>');
   return lines.join("\n") + "\n";
 }
