@@ -427,6 +427,8 @@
 
     // 快捷指令 / ribbon 按钮（getLabel 回调与面板快捷 chip 共用）
     "打开灵犀AI": "Open Lingxi AI",
+    "引用选区": "Quote selection",
+    "引用到灵犀AI": "Quote in Lingxi AI",
     "右侧面板": "Docked panel",
     "独立弹窗": "Floating dialog",
     "帮我写": "Help me write",
