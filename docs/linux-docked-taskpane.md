@@ -80,3 +80,27 @@ WPS 完全退出后重新打开，依次检查**右侧面板**与**独立弹窗*
 ## 选区引用
 
 新增正文右键「引用到灵犀AI」及 Ribbon「文档 → 引用选区」兜底。引用在聊天输入区域上方以灰色折叠卡片呈现，可多次添加、展开和删除，发送问题时才附带完整原文。文档切换后清空待发送引用。Linux 右键菜单和实际 WPS 交互仍需实机验证；完整说明、更新指令和验收项见 [选区引用](quote-selection.md)。
+
+
+## 2026-10-09：后台卡住恢复与 Linux 弹窗输入
+
+现场曾出现后台进程仍存活、端口仍监听，但 `/healthz` 请求超时，重启用户服务后恢复的情况。旧守护脚本仅检查静态端口，静态服务也只在代理子进程退出时重启它，因此无法处理“进程活着但不响应”。已观察到高 CPU，但缺少当时的调用栈，具体卡死触发原因尚未确定。
+
+静态服务现在在独立进程中检查自己启动的代理子进程：启动宽限 20 秒，每 15 秒请求一次健康接口，单次期限 2 秒，连续 3 次失败后终止该子进程并由原有退出逻辑重新启动；2 秒内不退出则升级为 SIGKILL。检查同时验证服务标识及子进程 PID，实际端口从该子进程启动日志读取，避免因端口回退而误杀其他服务。旧守护脚本的停机清理也覆盖各宿主目录内的代理进程。若代理有持续约一分钟阻塞事件循环的同步任务，自动恢复可能中断其正在执行的请求；此改动不是卡死触发原因的最终修复。
+
+Linux 的润色比对、排版预览、设置、素材库、会话列表等改用已有的页面内弹层；选区比对在右侧面板中打开时暂时扩宽面板，关闭后恢复。原生 ShowDialog 的打开与父窗口激活可能争抢输入焦点，这里绕开该路径。保留选区快照、生成/确认流程及既有输入法修复，独立聊天窗口入口仍可使用。Windows/macOS 的原生弹窗路径不变。
+
+不用重装 DEB。先保存文档并完全退出 WPS，在本地仓库目录执行：
+
+```bash
+git fetch origin
+git switch feature/quote-selection
+git pull --ff-only
+node --test plugin/test/proxy-health-monitor.test.js plugin/test/permanent-proxy-recovery.test.js plugin/test/linux-dialog-routing.test.js plugin/test/linux-source-sync.test.js plugin/test/dialog-focus-install.test.js plugin/test/quote-selection.test.js
+bash scripts/linux-sync-installed.sh
+systemctl --user restart lingxi-ai.service
+```
+
+同步会备份并更新安装根目录及各宿主的服务启动、守护与健康检查源码；不修改 systemd 单元、设置、密钥及会话。回滚仍使用 `bash scripts/linux-restore-last-sync.sh`，之后重启服务、重新打开 WPS。
+
+99 项相关 Node 测试通过，包含真实本地 HTTP 健康探测、模拟代理事件循环卡死与重启、端口回退时保留无关监听进程、Linux 弹层路由、源码同步与回滚。实际 WPS 弹窗输入尚未验证：重开 WPS 后请测试快速润色比对页的英文、中文候选词提交和关闭后聊天框输入，再确认接受/取消不会错误写入正文。

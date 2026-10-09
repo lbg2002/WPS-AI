@@ -23,6 +23,7 @@ const path = require("path");
 const url = require("url");
 const os = require("os");
 const { spawn } = require("child_process");
+const { startProxyHealthMonitor } = require("./proxy-health-monitor.js");
 
 const HOST_PREFIXES = new Set(["wps", "et", "wpp", "pdf"]);
 
@@ -272,14 +273,21 @@ function start({ root, staticPort, proxyPort }) {
 
   let shuttingDown = false;
   let proxy = null;
+  let proxyHealthPort = proxyPort;
+  let stopProxyHealthMonitor = () => {};
 
-  const wireProxy = (stream, target) => {
+  const wireProxy = (stream, target, child) => {
     let buf = "";
     stream.on("data", (chunk) => {
       buf += chunk.toString();
       const lines = buf.split(/\r?\n/);
       buf = lines.pop() || "";
-      for (const line of lines) target.write(`[proxy] ${line}\n`);
+      for (const line of lines) {
+        // Learn the actual port from this child, including listen-ladder fallback.
+        const match = line.match(/^\[proxy\] CORS 代理服务器已启动: http:\/\/127\.0\.0\.1:(\d+)/);
+        if (match && proxy === child) proxyHealthPort = Number(match[1]);
+        target.write(`[proxy] ${line}\n`);
+      }
     });
   };
 
@@ -290,12 +298,18 @@ function start({ root, staticPort, proxyPort }) {
   const spawnProxy = () => {
     if (shuttingDown) return;
     lastProxyStart = Date.now();
+    stopProxyHealthMonitor();
+    proxyHealthPort = proxyPort;
     proxy = spawn(proxyLauncher.nodeBin, proxyLauncher.args, {
       cwd: path.dirname(proxyScript),
       stdio: ["ignore", "pipe", "pipe"]
     });
-    wireProxy(proxy.stdout, process.stdout);
-    wireProxy(proxy.stderr, process.stderr);
+    wireProxy(proxy.stdout, process.stdout, proxy);
+    wireProxy(proxy.stderr, process.stderr, proxy);
+    stopProxyHealthMonitor = startProxyHealthMonitor(proxy, {
+      getPort: () => proxyHealthPort,
+      log: (message) => console.error(`[serve] ${message}`)
+    });
     proxy.on("error", (err) => {
       console.error(`[serve] proxy spawn 失败: ${err && err.message}`);
     });
@@ -317,6 +331,7 @@ function start({ root, staticPort, proxyPort }) {
   spawnProxy();
 
   const killProxy = () => {
+    stopProxyHealthMonitor();
     if (proxy && !proxy.killed) {
       try {
         if (process.platform === "win32") {

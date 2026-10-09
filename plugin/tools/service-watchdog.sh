@@ -75,7 +75,7 @@ stop_service() {
     case "$comm" in
       *node*)
         case "$args" in
-          *"$ROOT_DIR/tools/serve-permanent.js"*|*"$ROOT_DIR/tools/proxy-server.js"*)
+          *"$ROOT_DIR/tools/serve-permanent.js"*|*"$ROOT_DIR/tools/proxy-server.js"*|*"$ROOT_DIR/plugin-wps/tools/proxy-server.js"*|*"$ROOT_DIR/plugin-et/tools/proxy-server.js"*|*"$ROOT_DIR/plugin-wpp/tools/proxy-server.js"*|*"$ROOT_DIR/plugin-pdf/tools/proxy-server.js"*)
             kill -9 "$pid" >/dev/null 2>&1 || true
             ;;
         esac

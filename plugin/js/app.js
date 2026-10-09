@@ -1708,7 +1708,7 @@
     }
     if (!docPath || !/\.pdf$/i.test(docPath)) docPath = null;
     const app = global.WpsAiAddon?.getApplicationSync?.();
-    if (app && typeof app.ShowDialog === "function") {
+    if (app && typeof app.ShowDialog === "function" && !preferInlineWpsDialogs()) {
       try { localStorage.setItem(PARALLEL_TRANSLATE_DIALOG_REQUEST_KEY, JSON.stringify({ ts: Date.now(), docPath })); } catch (e) {}
       const base = global.WpsAiAddon?.getUrlPath?.() || "";
       const url = `${base}/taskpane.html?mode=paralleltranslate`;
@@ -3323,6 +3323,14 @@
 
   // 是否偏好浮窗主面板（与 wps-addon-adapter.preferDialogPaneForHost 一致）：确认 mac/linux 才 true。
   // 这两端主面板已是独立 ShowDialog 浮窗，「脱离/停靠」按钮无意义，隐藏它；Windows（或识别不出）保留。
+  // Linux WPS native ShowDialog may return before closing and lose native IME focus.
+  // Reuse the existing in-page modal paths; leave explicit main-panel mode choice intact.
+  function preferInlineWpsDialogs() {
+    const nav = global.navigator || {};
+    const platform = String(nav.userAgent || "") + " " + String(nav.platform || "");
+    return !/Windows|Win32|Win64|WOW64/i.test(platform) && /Linux|X11|CrOS/i.test(platform);
+  }
+
   function preferFloatingPanel() {
     try {
       const qs = new URLSearchParams(global.location?.search || "");
@@ -3394,7 +3402,7 @@
       const subtabArg = initialSubtab ? `&subtab=${encodeURIComponent(initialSubtab)}` : "";
       const url = `${base}/taskpane.html?mode=settings${panelArg}${subtabArg}`;
       const app = global.WpsAiAddon?.getApplicationSync?.();
-      if (app && typeof app.ShowDialog === "function") {
+      if (app && typeof app.ShowDialog === "function" && !preferInlineWpsDialogs()) {
         const { w, h } = pickDialogSize(960, 720);
         // 第 5 个参数 true = 模态阻塞（调用要等用户关 dialog 才返回）。
         // 之前是 false（modeless），ShowDialog 立刻返回 → 下面的 activateWpsApp 在 dialog 刚弹出来时
@@ -3425,7 +3433,7 @@
       const base = global.WpsAiAddon?.getUrlPath?.() || "";
       const url = `${base}/taskpane.html?mode=stylepreset`;
       const app = global.WpsAiAddon?.getApplicationSync?.();
-      if (app && typeof app.ShowDialog === "function") {
+      if (app && typeof app.ShowDialog === "function" && !preferInlineWpsDialogs()) {
         const { w, h } = pickDialogSize(720, 880);
         app.ShowDialog(url, i18nDialogTitle("PPT 风格"), w, h, true);
         try { activateWpsApp(app); } catch (e) {}
@@ -7294,7 +7302,7 @@
       const base = global.WpsAiAddon?.getUrlPath?.() || "";
       const url = `${base}/taskpane.html?mode=formatpreview`;
       const app = global.WpsAiAddon?.getApplicationSync?.();
-      if (app && typeof app.ShowDialog === "function") {
+      if (app && typeof app.ShowDialog === "function" && !preferInlineWpsDialogs()) {
         try {
           localStorage.setItem(FORMAT_PREVIEW_DIALOG_REQUEST_KEY, JSON.stringify({
             ts: Date.now(),
@@ -8094,6 +8102,7 @@
         els.selectionPreviewCustomLanguageInput.classList.toggle("hidden", known);
       }
     }
+    if (!isAnyDialogWindow()) tryExpandTaskPaneForPreview();
     els.selectionPreviewModal?.classList.remove("hidden");
     // documentReport（脑图 / 总结）：恢复上次为「相同文档内容」生成的结果，
     // 避免关掉弹窗再点开就空白（用户要看到历史生成的内容）。
@@ -8338,6 +8347,7 @@
       return;
     }
     els.selectionPreviewModal?.classList.add("hidden");
+    if (!isAnyDialogWindow()) tryRestoreTaskPaneAfterPreview();
     selectionPreviewState = null;
   }
 
@@ -8606,7 +8616,7 @@
       const base = global.WpsAiAddon?.getUrlPath?.() || "";
       const url = `${base}/taskpane.html?mode=selectionpreview`;
       const app = global.WpsAiAddon?.getApplicationSync?.();
-      if (app && typeof app.ShowDialog === "function") {
+      if (app && typeof app.ShowDialog === "function" && !preferInlineWpsDialogs()) {
         try { localStorage.setItem(SELECTION_PREVIEW_DIALOG_REQUEST_KEY, JSON.stringify(request)); } catch (e) {}
         try { localStorage.removeItem(SELECTION_PREVIEW_DIALOG_RESULT_KEY); } catch (e) {}
         const { w, h } = pickDialogSize(1120, 760, { minW: 820, minH: 560 });
@@ -11978,7 +11988,7 @@
       const base = global.WpsAiAddon?.getUrlPath?.() || "";
       const url = `${base}/taskpane.html?mode=materials`;
       const app = global.WpsAiAddon?.getApplicationSync?.();
-      if (app && typeof app.ShowDialog === "function") {
+      if (app && typeof app.ShowDialog === "function" && !preferInlineWpsDialogs()) {
         rememberWriterInsertionRange();
         const { w, h } = pickDialogSize(1040, 760, { minW: 760, minH: 560 });
         app.ShowDialog(url, i18nDialogTitle("素材库"), w, h, true);
@@ -14015,7 +14025,7 @@
   function openConversationsAsDialog() {
     try {
       const app = global.WpsAiAddon?.getApplicationSync?.();
-      if (app && typeof app.ShowDialog === "function") {
+      if (app && typeof app.ShowDialog === "function" && !preferInlineWpsDialogs()) {
         const base = global.WpsAiAddon?.getUrlPath?.() || "";
         const url = `${base}/taskpane.html?mode=conversations&dk=${encodeURIComponent(getCurrentDocKey())}`;
         const { w, h } = pickDialogSize(460, 640, { minW: 360, minH: 420 });
@@ -16495,7 +16505,7 @@
       const base = global.WpsAiAddon?.getUrlPath?.() || "";
       const url = `${base}/taskpane.html?mode=quickprompt`;
       const app = global.WpsAiAddon?.getApplicationSync?.();
-      if (app && typeof app.ShowDialog === "function") {
+      if (app && typeof app.ShowDialog === "function" && !preferInlineWpsDialogs()) {
         rememberWriterInsertionRange();
         const request = Object.assign({}, hydrated, { ts: Date.now() });
         try { localStorage.setItem(QUICK_PROMPT_DIALOG_REQUEST_KEY, JSON.stringify(request)); } catch (e) {}
@@ -17406,8 +17416,8 @@
       const url = `${base}/taskpane.html?mode=preview`;
       const app = global.WpsAiAddon?.getApplicationSync?.();
       plog("tryDialog", "url =", url, "app =", !!app, "ShowDialog =", typeof app?.ShowDialog);
-      if (!app || typeof app.ShowDialog !== "function") {
-        pwarn("tryDialog", "no Application.ShowDialog API → fallback to inline modal");
+      if (!app || typeof app.ShowDialog !== "function" || preferInlineWpsDialogs()) {
+        pwarn("tryDialog", "using inline modal for this platform or missing ShowDialog API");
         return false;
       }
       // 把可序列化的部分写到 localStorage 供 dialog 读

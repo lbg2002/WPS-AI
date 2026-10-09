@@ -9,12 +9,13 @@ latest="$(find "$backup_root" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | s
 snap="$backup_root/$latest"
 echo "Restoring snapshot $snap"
 count=0
-for host in wps et wpp pdf; do
+for host in wps et wpp pdf shared; do
   [[ -d "$snap/$host" ]] || continue
   while IFS= read -r -d '' file; do
     rel="${file#"$snap/$host/"}"
     [[ "$rel" == ".added-files" ]] && continue
     target="$root/plugin-$host/$rel"
+    [[ "$host" == "shared" ]] && target="$root/$rel"
     [[ -f "$target" ]] || continue
     cp -p "$file" "$target"
     echo "[RESTORED] $host/$rel"
@@ -23,9 +24,12 @@ for host in wps et wpp pdf; do
   if [[ -f "$snap/$host/.added-files" ]]; then
     while IFS= read -r rel; do
       [[ -n "$rel" && "$rel" != /* && "$rel" != *..* ]] || continue
-      rm -f "$root/plugin-$host/$rel"
+      target="$root/plugin-$host/$rel"
+      [[ "$host" == "shared" ]] && target="$root/$rel"
+      rm -f "$target"
     done < "$snap/$host/.added-files"
   fi
 done
+echo "Restart the backend: systemctl --user restart lingxi-ai.service"
 echo "Restored $count file(s). Completely restart WPS to see changes."
 echo "No user configuration, conversation history or WPS publish.xml was changed."
