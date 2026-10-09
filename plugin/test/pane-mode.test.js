@@ -28,11 +28,11 @@ for (const host of ["wps", "et", "wpp", "pdf"]) {
 
 test("committed WPS ribbon and callbacks match generator", () => {
   assert.equal(
-    fs.readFileSync(path.join(pluginRoot, "ribbon.xml"), "utf8"),
+    fs.readFileSync(path.join(pluginRoot, "ribbon.xml"), "utf8").replace(/\r\n/g, "\n"),
     buildRibbon("wps", qa)
   );
   assert.equal(
-    fs.readFileSync(path.join(pluginRoot, "js/ribbon-callbacks.generated.js"), "utf8"),
+    fs.readFileSync(path.join(pluginRoot, "js/ribbon-callbacks.generated.js"), "utf8").replace(/\r\n/g, "\n"),
     buildRibbonCallbackScript("wps", qa)
   );
 });

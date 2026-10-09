@@ -23,6 +23,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
+      # Generated-file tests normalize the Windows checkout CRLF line endings.
       - name: Check Windows shared behavior and release helpers
         run: node --test plugin/test/release-version.test.js plugin/test/release-assets.test.js plugin/test/offline-installer.test.js plugin/test/pane-mode.test.js plugin/test/quote-selection.test.js plugin/test/linux-dialog-routing.test.js plugin/test/ribbon-callbacks.test.js plugin/test/ui-compact.test.js
       - name: Prepare verified portable Node and compiler
