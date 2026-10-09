@@ -34,7 +34,7 @@ done
 backup_dir="$install_dir/source-backups/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$backup_dir"
 
-# Only source-controlled files are replaced. Existing credentials, conversations,
+# Only source-controlled files are replaced. The changed HTML/CSS are also synced. Existing credentials, conversations,
 # SQLite, publish.xml, user systemd unit, installed runtime and proxy stay intact.
 copy_with_backup() {
   local host="$1" file="$2" source="$3"
@@ -52,6 +52,8 @@ for host in wps et wpp pdf; do
   # Do not use npm run dev: its Linux registration routine overwrites the
   # shared WPS publish.xml and could remove unrelated plugins.
   (cd "$plugin_root" && node tools/gen-ribbon.js "$host")
+  copy_with_backup "$host" "taskpane.html" "$plugin_root/taskpane.html"
+  copy_with_backup "$host" "css/style.css" "$plugin_root/css/style.css"
   copy_with_backup "$host" "js/app.js" "$plugin_root/js/app.js"
   copy_with_backup "$host" "js/wps-addon-adapter.js" "$plugin_root/js/wps-addon-adapter.js"
   copy_with_backup "$host" "js/i18n.js" "$plugin_root/js/i18n.js"
