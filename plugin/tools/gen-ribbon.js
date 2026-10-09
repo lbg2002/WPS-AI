@@ -78,7 +78,7 @@ function pngIconPath(iconPath) {
 }
 
 function iconPathForButton(host, qa, id, action, category) {
-  if (id === "openWpsAiPane") return "images/ai.png";
+  if (id === "openWpsAiPane" || id === "openWpsAiDocked" || id === "openWpsAiDialog") return "images/ai.png";
   if (id === "lingxiStyleBtn") return "images/icons/palette.png";
   if (id === "lingxiUnifyBtn") return "images/icons/wand.png";
   if (id === "lingxiDeAiBtn") return "images/icons/scrub.png";
@@ -104,11 +104,13 @@ function buttonAttrs({ id, label, size, iconPath, visible = false }) {
 function buildRibbonCallbackScript(host, qa) {
   const BUILTIN_LABELS = {
     openWpsAiPane: "打开灵犀AI",
+    openWpsAiDocked: "右侧面板",
+    openWpsAiDialog: "独立弹窗",
     lingxiStyleBtn: "PPT 风格",
     lingxiUnifyBtn: "统一风格",
     lingxiDeAiBtn: "去 AI 味"
   };
-  const ids = ["openWpsAiPane"];
+  const ids = ["openWpsAiPane", "openWpsAiDocked", "openWpsAiDialog"];
   if (host === "wpp") ids.push("lingxiStyleBtn", "lingxiUnifyBtn", "lingxiDeAiBtn");
   const labelById = Object.assign({}, BUILTIN_LABELS);
   // 分组 / Tab 的 getLabel 绑定（fnName → 中文原文）
@@ -164,6 +166,9 @@ function buildRibbon(host, qa, translate) {
   // 主入口 group：「打开灵犀AI」 + PPT 宿主额外的「PPT 风格」「统一风格」按钮
   lines.push(`        <group id="lingxiCore" label="${escapeXml(tr("灵犀AI"))}" getLabel="${labelCallbackName("group.lingxiCore")}">`);
   lines.push(`          <button ${buttonAttrs({ id: "openWpsAiPane", label: tr("打开灵犀AI"), size: "large", iconPath: iconPathForButton(host, qa, "openWpsAiPane"), visible: true })}/>`);
+  // 明确的回退入口：输入法/焦点异常时直接使用旧版 ShowDialog 浮窗。
+  lines.push(`          <button ${buttonAttrs({ id: "openWpsAiDocked", label: tr("右侧面板"), size: "normal", iconPath: iconPathForButton(host, qa, "openWpsAiDocked") })}/>`);
+  lines.push(`          <button ${buttonAttrs({ id: "openWpsAiDialog", label: tr("独立弹窗"), size: "normal", iconPath: iconPathForButton(host, qa, "openWpsAiDialog") })}/>`);
   if (host === "wpp") {
     lines.push(`          <button ${buttonAttrs({ id: "lingxiStyleBtn", label: tr("PPT 风格"), size: "large", iconPath: iconPathForButton(host, qa, "lingxiStyleBtn") })}/>`);
     lines.push(`          <button ${buttonAttrs({ id: "lingxiUnifyBtn", label: tr("统一风格"), size: "large", iconPath: iconPathForButton(host, qa, "lingxiUnifyBtn") })}/>`);
