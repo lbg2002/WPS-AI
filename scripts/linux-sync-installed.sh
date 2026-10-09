@@ -39,7 +39,16 @@ mkdir -p "$backup_dir"
 copy_with_backup() {
   local host="$1" file="$2" source="$3"
   local dst="$install_dir/plugin-$host/$file"
-  [[ -f "$dst" ]] || { echo "[SKIP] Missing installed file: $dst" >&2; return; }
+  if [[ ! -f "$dst" ]]; then
+    if [[ "$file" != "js/selection-quotes.js" ]]; then
+      echo "[SKIP] Missing installed file: $dst" >&2
+      return
+    fi
+    mkdir -p "$(dirname "$dst")"
+    cp "$source" "$dst"
+    echo "[CREATED] $host/$file"
+    return
+  fi
   mkdir -p "$backup_dir/$host/$(dirname "$file")"
   cp -p "$dst" "$backup_dir/$host/$file"
   cp "$source" "$dst"
@@ -52,6 +61,8 @@ for host in wps et wpp pdf; do
   # Do not use npm run dev: its Linux registration routine overwrites the
   # shared WPS publish.xml and could remove unrelated plugins.
   (cd "$plugin_root" && node tools/gen-ribbon.js "$host")
+  copy_with_backup "$host" "main.js" "$plugin_root/main.js"
+  copy_with_backup "$host" "js/selection-quotes.js" "$plugin_root/js/selection-quotes.js"
   copy_with_backup "$host" "taskpane.html" "$plugin_root/taskpane.html"
   copy_with_backup "$host" "css/style.css" "$plugin_root/css/style.css"
   copy_with_backup "$host" "js/app.js" "$plugin_root/js/app.js"
