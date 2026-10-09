@@ -50,3 +50,29 @@ bash scripts/linux-sync-installed.sh
 5. Word、Excel、PPT 文档操作仍然正常，切换后 API/对话是否存在。
 
 如果 **WPS 官方 AI 也存在相同焦点问题**，说明可能是 WPS Linux 版本/Qt WebView/Fcitx5 兼容故障；升级 WPS 可能改善，也可能不改善。升级前留存安装包并备份配置，优先选择可信官方渠道。
+
+## 2026-10：紧凑布局调整（同一个分支）
+
+针对用户已测试可中文输入的 Linux X11/Fcitx5 环境：**只调整 UI，不更改焦点/输入法兼容代码**。
+
+- 第一排直接显示「AI 助手 / 改动记录 / 生图」、新对话与设置等按钮。
+- 移除原来占高度的品牌/模型 Header；“新版本”提醒仍留在可见导航栏。
+- 模型选择移动至**聊天输入框下方工具栏，思考强度左边**，列表向上展开。
+- 「刷新模型列表」移到模型下拉菜单的底部，保留原来的刷新事件。
+- 「修订模式」用小图标按钮放在图片/附件按钮后；需要接受/回撤已有修订时点旁边的「…」管理按钮。
+- 同样作用于 WPS 右侧 TaskPane 和独立 ShowDialog（两者共用 taskpane.html 与 style.css）。
+
+已经扩充 `scripts/linux-sync-installed.sh`，现在会同时同步 `taskpane.html` / `css/style.css` / `app.js` 等文件，保留之前的源码备份与回滚功能。
+
+完成更新后建议运行：
+
+```bash
+cd ~/git_soft/WPS-AI
+git fetch origin
+git switch feature/linux-docked-taskpane
+git pull --ff-only
+node --test plugin/test/ui-compact.test.js plugin/test/pane-mode.test.js
+bash scripts/linux-sync-installed.sh
+```
+
+WPS 完全退出后重新打开，依次检查**右侧面板**与**独立弹窗**两种模式，重点测试中文输入、模型切换/刷新、修订开关及接受/回撤操作。若窗口仍缓存老资源，可彻底退出 WPS 再打开，不需要重新打包安装 DEB。
