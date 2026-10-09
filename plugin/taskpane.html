@@ -888,6 +888,8 @@
 
         <!-- 输入框：上 textarea + 下工具栏（左 + 上传、右 ↑ 发送 / ◼ 停止）-->
         <div class="chat-input-box">
+          <!-- 引用选区草稿：默认灰色折叠，每段可展开或单独删除，不会自动发送。 -->
+          <div id="selectionQuoteDraft" class="selection-quote-draft hidden" aria-live="polite"></div>
           <textarea id="chatInput" rows="3" placeholder="例如：把当前选区内容润色得更专业"></textarea>
           <div class="chat-input-toolbar">
             <input id="chatAttachFile" type="file" multiple accept="image/*,application/pdf,.pdf,.txt,.md,.csv,.json,.js,.ts,.py,.html,.css,.xml,.yaml,.yml,.log" style="display:none" />
