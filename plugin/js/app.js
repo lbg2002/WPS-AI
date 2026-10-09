@@ -357,6 +357,7 @@
       "unifyOutlineText", "unifyExtractBtn", "unifyClearBtn", "unifyAutoImage",
       "modelSelect", "refreshModelsBtn",
       "modelSelectBtn", "modelSelectLabel", "modelSelectCaps", "modelSelectPopup",
+      "reviseManageBtn",
       // 新版设置弹窗
       "settingsModal", "settingsModalCloseBtn", "openSettingsModalBtn",
       "localModelGuideSlot", "chatProvidersList", "addChatProviderBtn",
@@ -1931,8 +1932,21 @@
     });
     // 「附加当前 PDF」按钮：把 WPS 里打开的 PDF 读进附件
     els.chatAttachActiveBtn?.addEventListener("click", () => attachActivePdf({ silent: false }));
-    // 修订模式（仅 WPS 文字）：开关 + 接受全部 / 全部回撤
+    // 修订开关直接位于输入工具栏中；接受/回撤收进小菜单，防止占满输入区。
     els.reviseModeToggle?.addEventListener("change", onReviseModeToggle);
+    els.reviseManageBtn?.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      const menu = els.reviseModeActions;
+      if (!menu || menu.classList.contains("is-applying")) return;
+      menu.classList.toggle("hidden");
+      els.reviseManageBtn?.setAttribute("aria-expanded", String(!menu.classList.contains("hidden")));
+    });
+    document.addEventListener("click", (ev) => {
+      if (!els.reviseModeBar?.contains(ev.target) && !els.reviseModeActions?.classList.contains("hidden")) {
+        els.reviseModeActions?.classList.add("hidden");
+        els.reviseManageBtn?.setAttribute("aria-expanded", "false");
+      }
+    });
     els.reviseAcceptAllBtn?.addEventListener("click", () => reviseManageAll("accept_all"));
     els.reviseRejectAllBtn?.addEventListener("click", () => {
       if (!confirm("确定全部回撤？将拒绝所有修订，把文档还原到 AI 改动前。")) return;
@@ -2199,6 +2213,9 @@
   async function onReviseModeToggle() {
     const on = !!els.reviseModeToggle?.checked;
     currentSettings.reviseMode = on;
+    // 收起管理菜单，不在更改开关后保留悬浮操作。
+    els.reviseModeActions?.classList.add("hidden");
+    els.reviseManageBtn?.setAttribute("aria-expanded", "false");
     try { persistSettings(); } catch (e) {}
     updateReviseActions();
     updateForceUnlockVisibility();
@@ -2237,6 +2254,8 @@
       showMessage((action === "accept_all" ? "接受修订失败：" : "回撤失败：") + (e?.message || e), "error");
     } finally {
       setReviseApplying(false);
+      els.reviseModeActions?.classList.add("hidden");
+      els.reviseManageBtn?.setAttribute("aria-expanded", "false");
       updateReviseActions();
     }
   }
@@ -2251,11 +2270,22 @@
   async function updateReviseActions() {
     if (!els.reviseModeActions) return;
     const show = (currentHostInfo?.host === "wps") && !!currentSettings?.reviseMode;
-    if (!show) { els.reviseModeActions.classList.add("hidden"); stopReviseActionsPoll(); return; }
+    if (!show) {
+      els.reviseModeActions.classList.add("hidden");
+      els.reviseManageBtn?.classList.add("hidden");
+      els.reviseManageBtn?.setAttribute("aria-expanded", "false");
+      stopReviseActionsPoll();
+      return;
+    }
     if (!reviseActionsPoll) reviseActionsPoll = setInterval(() => { updateReviseActions(); }, 2500);
     let n = 0;
     try { n = (await global.WpsAiHostWriter?.revisionCount?.()) || 0; } catch (e) { n = 0; }
-    els.reviseModeActions.classList.toggle("hidden", !(n > 0));
+    // 有修订只露出小菜单按钮；管理菜单需要用户主动展开。
+    els.reviseManageBtn?.classList.toggle("hidden", !(n > 0));
+    if (n <= 0) {
+      els.reviseModeActions.classList.add("hidden");
+      els.reviseManageBtn?.setAttribute("aria-expanded", "false");
+    }
   }
 
   function readSelectionSig(app, host) {
@@ -2931,7 +2961,10 @@
   // 渲染下拉浮层：分组按 provider；每行 "[Provider] modelId" + 能力图标
   function renderMultiModelPopup(items, selected) {
     if (!els.modelSelectPopup || !els.modelSelectLabel || !els.modelSelectCaps) return;
-    els.modelSelectPopup.innerHTML = "";
+    // 只替换模型列表：保留下方刷新按钮和现有点击事件绑定。
+    const optionList = els.modelSelectPopup.querySelector(".model-select-options");
+    if (!optionList) return;
+    optionList.innerHTML = "";
 
     if (items.length === 0) {
       els.modelSelectLabel.textContent = "（请在设置里启用至少一个供应商）";
@@ -2939,7 +2972,7 @@
       const empty = document.createElement("div");
       empty.className = "model-select-popup-item disabled";
       empty.innerHTML = `<span class="model-select-popup-item-label">没有可用模型</span>`;
-      els.modelSelectPopup.appendChild(empty);
+      optionList.appendChild(empty);
       return;
     }
 
@@ -2995,7 +3028,7 @@
         if (arrow) arrow.textContent = nowCollapsed ? "▸" : "▾";
         setProviderCollapsed(providerId, nowCollapsed);
       });
-      els.modelSelectPopup.appendChild(head);
+      optionList.appendChild(head);
 
       group.models.forEach((it) => {
         const item = document.createElement("button");
@@ -3024,7 +3057,7 @@
         });
         body.appendChild(item);
       });
-      els.modelSelectPopup.appendChild(body);
+      optionList.appendChild(body);
     });
   }
 
