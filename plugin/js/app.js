@@ -16508,7 +16508,7 @@
       label.textContent = "❝ 引用 " + (i + 1);
       const preview = document.createElement("span");
       preview.className = "selection-quote-preview";
-      preview.textContent = item.text.replace(/\\s+/g, " ").slice(0, 110);
+      preview.textContent = item.text.replace(/\s+/g, " ").slice(0, 110);
       toggle.append(label, preview);
       toggle.addEventListener("click", () => {
         item.expanded = !item.expanded;
