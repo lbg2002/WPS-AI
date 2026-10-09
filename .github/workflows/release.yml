@@ -1,0 +1,147 @@
+name: Build and publish Windows + Linux release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Check Windows shared behavior and release helpers
+        run: node --test plugin/test/release-version.test.js plugin/test/release-assets.test.js plugin/test/offline-installer.test.js plugin/test/pane-mode.test.js plugin/test/quote-selection.test.js plugin/test/linux-dialog-routing.test.js plugin/test/ribbon-callbacks.test.js plugin/test/ui-compact.test.js
+      - name: Prepare verified portable Node and compiler
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $nodeVersion = node -p process.version
+          if (Test-Path plugin/runtime/node-win-x64) { Remove-Item plugin/runtime/node-win-x64 -Recurse -Force }
+          node plugin/tools/bundle-node.js --platform win-x64 --version $nodeVersion
+          if ($LASTEXITCODE -ne 0) { throw 'Node bundling failed' }
+          if (-not (Test-Path plugin/runtime/node-win-x64/node.exe)) { throw 'Portable Node is missing' }
+          & ./plugin/runtime/node-win-x64/node.exe --experimental-sqlite -e "require('node:sqlite')"
+          if ($LASTEXITCODE -ne 0) { throw 'Portable Node lacks SQLite support' }
+          $compiler = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6/ISCC.exe'
+          if (-not (Test-Path $compiler)) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+          }
+      - name: Build complete offline EXE
+        run: node upload-oss/lib/build-installer.js win
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: windows-installer
+          path: dist/*-setup.exe
+          if-no-files-found: error
+          retention-days: 30
+
+  linux:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Check installation, quoting and proxy recovery
+        run: node --test plugin/test/release-version.test.js plugin/test/release-assets.test.js plugin/test/offline-installer.test.js plugin/test/permanent-proxy-recovery.test.js plugin/test/proxy-health-monitor.test.js plugin/test/linux-dialog-routing.test.js plugin/test/linux-source-sync.test.js plugin/test/dialog-focus-install.test.js plugin/test/pane-mode.test.js plugin/test/ui-compact.test.js plugin/test/edit-shortcuts.test.js plugin/test/quote-selection.test.js plugin/test/ribbon-callbacks.test.js plugin/test/proxy-status-badge.test.js plugin/test/dev-publish.test.js
+      - name: Prepare verified portable Node
+        env:
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          node_version=$(node -p process.version)
+          rm -rf "plugin/runtime/node-linux-$TARGET_ARCH"
+          node plugin/tools/bundle-node.js --platform "linux-$TARGET_ARCH" --version "$node_version"
+          test -x "plugin/runtime/node-linux-$TARGET_ARCH/bin/node"
+          # arm64 is cross-packaged on the x64 runner, not executed here.
+          if [[ "$TARGET_ARCH" == x64 ]]; then
+            "plugin/runtime/node-linux-$TARGET_ARCH/bin/node" --experimental-sqlite -e "require('node:sqlite')"
+          fi
+      - name: Build complete offline tar and DEB
+        env:
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          bash installer-linux/build.sh --arch "$TARGET_ARCH" --format tar,deb
+          version=$(node -p "require('./plugin/package.json').version")
+          tar -tzf "dist/lingxi-ai-$version-linux-$TARGET_ARCH.tar.gz" > "$RUNNER_TEMP/tar-files.txt"
+          grep -F "plugin/runtime/node-linux-$TARGET_ARCH/bin/node" "$RUNNER_TEMP/tar-files.txt"
+          deb_arch=amd64
+          if [[ "$TARGET_ARCH" == arm64 ]]; then deb_arch=arm64; fi
+          dpkg-deb --contents "dist/lingxi-ai_${version}_${deb_arch}.deb" > "$RUNNER_TEMP/deb-files.txt"
+          grep -F "plugin/runtime/node-linux-$TARGET_ARCH/bin/node" "$RUNNER_TEMP/deb-files.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: linux-installers-${{ matrix.arch }}
+          path: |
+            dist/*.tar.gz
+            dist/*.deb
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: [windows, linux]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          path: release-assets
+          merge-multiple: true
+      - name: Verify all five installers and write checksums
+        run: node plugin/tools/verify-release-assets.js release-assets
+      - name: Publish release after all builds succeed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./plugin/package.json').version")
+          tag="v$version"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "Release $tag already exists. Bump the version before publishing again."
+            exit 1
+          fi
+          cat > "$RUNNER_TEMP/release-notes.md" <<'NOTES'
+          灵犀AI WPS 插件：Windows x64 EXE、Linux x64/arm64 完整 tar 包和 DEB。
+
+          - 完整安装包包含插件与对应架构 Node，可复制到无网电脑安装；请先安装 WPS。
+          - Linux tar：解压后以桌面用户运行 bash install.sh，完全退出后重新打开 WPS。
+          - DEB：依赖预先齐全时执行 sudo dpkg -i；无网环境推荐完整 tar 包。
+          - Windows：关闭 WPS 后运行 EXE，自动配置插件与登录计划任务。
+          - 云端 API 仍需联网；离线推理需另备本地模型，或连接内网模型。
+          - 包含选区引用、Linux 面板内预览与输入修复、宽度保持、后台健康恢复。
+          - 包附 SHA256SUMS，请核对文件完整性。Windows EXE 未进行代码签名。
+          - CI 编译、打包和 Node 测试不代表 WPS 实机交互测试；arm64 采用交叉打包。
+
+          完整部署、离线安装与排错步骤见仓库 main 的 README。
+          NOTES
+          gh release create "$tag" release-assets/* --target "$GITHUB_SHA" --title "灵犀AI $version · Windows / Linux" --notes-file "$RUNNER_TEMP/release-notes.md" --draft
+          gh release edit "$tag" --draft=false --latest
+          gh release view "$tag" --json url --jq .url >> "$GITHUB_STEP_SUMMARY"

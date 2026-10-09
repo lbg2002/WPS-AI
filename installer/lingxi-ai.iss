@@ -7,11 +7,11 @@
 ; 编译前先确保 plugin\runtime\node-win-x64\node.exe 存在
 ;   cd plugin && node tools\bundle-node.js
 ;
-; 产物：dist\lingxi-ai-1.4.7-setup.exe
+; 产物：dist\lingxi-ai-1.4.8-setup.exe
 
 #define MyAppName "灵犀AI"
 #define MyAppNameEn "Lingxi AI"
-#define MyAppVersion "1.4.7"
+#define MyAppVersion "1.4.8"
 #define MyAppPublisher "lingxi-ai"
 #define MyAppURL "https://github.com/lewis-hui1202/WPS-AI"
 

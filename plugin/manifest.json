@@ -1,7 +1,7 @@
 {
   "name": "灵犀AI",
   "addonType": "wps",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "description": "灵犀AI WPS 加载项：通过 ChatGPT OAuth 登录并调用 OpenAI Responses API。",
   "author": "lingxi-ai",
   "homepage": "index.html",

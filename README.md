@@ -169,6 +169,16 @@ sha256sum "lingxi-ai-${LINGXI_VERSION}-linux-${LINGXI_ARCH}.tar.gz" > SHA256SUMS
 
 将生成的 **`.tar.gz` 和 `SHA256SUMS` 一起**复制到 U 盘或内网共享，再传到无网电脑。保留该包对应的源码提交号，避免把同版本号的上游旧包与本 Fork 包混用。Windows/macOS 请提前准备对应平台、含运行时的完整安装包，不能使用 Linux 包替代。本 Fork 可在对应平台运行 `node upload-oss/lib/build-installer.js win` / `node upload-oss/lib/build-installer.js mac` 构建；Windows 需先准备 Inno Setup，macOS 需其原生打包工具。构建入口会下载缺失的 Node 运行时；只运行构建命令，无需配置 OSS 或上传。macOS 打包入口和说明见 [installer-mac](installer-mac/README.md)。
 
+### 直接在 GitHub 构建并发布 Release（无需本机编译器）
+
+在本 Fork 打开 **Actions → Build and publish Windows + Linux release → Run workflow**，选择 `main`。仓库若提示未启用 Fork 的 Actions，先启用。工作流使用 GitHub 托管的 Windows/Ubuntu 构建机器，构建 Windows x64 EXE、Linux x64/arm64 tar 包和 DEB；所有构建成功且五个安装包齐全后生成 `SHA256SUMS`，创建并发布对应 `v<插件版本>` 的 GitHub Release。
+
+- 首次添加或修改 `.github/workflows/release.yml` 并推送至 main 也会触发；普通源码提交不会自动发布。
+- 后续新版本先修改 `plugin/package.json` 的 `version` 并提交，再手动运行工作流；同名 Release 已存在时拒绝覆盖。已有网站版本源时需同时调整实际生效的版本源。
+- 发布需要仓库允许 Actions 使用 `contents: write`；不需要 OSS、个人 token 或额外密钥。仅发布步骤具有写权限。
+- 构建机器联网下载工具和对应 Node，最终安装包可离线安装。Windows EXE 未签名，arm64 为交叉打包；CI 成功不能代替 WPS 实机测试。
+- 从仓库 **Releases → 对应版本 → Assets** 下载 EXE/tar.gz/DEB 和 `SHA256SUMS`；运行详情页的 Artifacts 也保留构建产物 30 天。
+
 ### Windows Release：构建完整 EXE
 
 在 Windows 构建电脑上准备 Git、Node 22.5+ 和 Inno Setup 6（安装至其标准位置，编译器需支持 `x64compatible`）。关闭正在使用旧构建文件的 WPS，再执行：
@@ -183,7 +193,7 @@ Get-FileHash .\dist\*-setup.exe -Algorithm SHA256
 
 已有仓库则先 `git fetch origin`、`git switch main`、`git pull --ff-only`，不用再次 clone。构建入口在缺少 Windows Node 时下载内置运行时；若仓库已有 `plugin/runtime/node-win-x64/node.exe`，则直接使用。无需 `npm install`，无需配置 OSS，也不会因为这个构建命令自动上传或创建 GitHub Release。
 
-有 `site/utils/release.ts` 时沿用上游版本源；没有该文件的公开 Fork 使用 `plugin/package.json` 的 `version`，并同步到 manifest 和 Inno Setup。若要发一个新的版本，修改实际生效的版本源再构建。目前版本为 `1.4.7` 时，产物是 `dist/lingxi-ai-1.4.7-setup.exe`。
+有 `site/utils/release.ts` 时沿用上游版本源；没有该文件的公开 Fork 使用 `plugin/package.json` 的 `version`，并同步到 manifest 和 Inno Setup。若要发一个新的版本，修改实际生效的版本源再构建。版本为 `1.4.8` 时，产物是 `dist/lingxi-ai-1.4.8-setup.exe`。
 
 将 **EXE 和记录的 SHA256 校验值**复制到目标电脑。目标电脑提前装好 WPS，完全退出 WPS 后运行 EXE；安装包内带 Node 和插件，安装脚本只做本地注册和计划任务配置，**无需联网下载安装依赖，也无需目标电脑安装 Git、Node 或 Inno Setup**。内置 PowerShell/任务计划程序需可用，系统策略若禁止脚本或计划任务，安装会失败。无网安装不保证 WPS 自身激活/账号操作离线可用，也不包含模型权重。
 
