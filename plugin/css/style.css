@@ -9599,7 +9599,6 @@ body.pure-mode .image-gen-panel.hidden { display: none; }
   font-size: 12px;
   font-family: inherit;
 }
-.model-select-footer #refreshModelsBtn::after { content: "刷新模型列表"; }
 .model-select-footer #refreshModelsBtn:hover { color: var(--primary, #1a6dff); background: var(--primary-soft, #eaf1ff); }
 .model-select-footer #refreshModelsBtn:disabled { opacity: .5; cursor: wait; }
 .model-select-footer #refreshModelsBtn svg { width: 15px; height: 15px; }
