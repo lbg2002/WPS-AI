@@ -170,6 +170,7 @@
   ];
 
   if (isTaskpanePage) {
+    scripts.push("js/selection-quotes.js");
     scripts.push("js/app.js");
   }
 
