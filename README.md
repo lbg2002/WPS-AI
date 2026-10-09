@@ -169,6 +169,26 @@ sha256sum "lingxi-ai-${LINGXI_VERSION}-linux-${LINGXI_ARCH}.tar.gz" > SHA256SUMS
 
 将生成的 **`.tar.gz` 和 `SHA256SUMS` 一起**复制到 U 盘或内网共享，再传到无网电脑。保留该包对应的源码提交号，避免把同版本号的上游旧包与本 Fork 包混用。Windows/macOS 请提前准备对应平台、含运行时的完整安装包，不能使用 Linux 包替代。本 Fork 可在对应平台运行 `node upload-oss/lib/build-installer.js win` / `node upload-oss/lib/build-installer.js mac` 构建；Windows 需先准备 Inno Setup，macOS 需其原生打包工具。构建入口会下载缺失的 Node 运行时；只运行构建命令，无需配置 OSS 或上传。macOS 打包入口和说明见 [installer-mac](installer-mac/README.md)。
 
+### Windows Release：构建完整 EXE
+
+在 Windows 构建电脑上准备 Git、Node 22.5+ 和 Inno Setup 6（安装至其标准位置，编译器需支持 `x64compatible`）。关闭正在使用旧构建文件的 WPS，再执行：
+
+```powershell
+git clone --branch main https://github.com/lbg2002/WPS-AI.git
+cd WPS-AI
+node upload-oss/lib/build-installer.js win
+Get-ChildItem .\dist\*-setup.exe
+Get-FileHash .\dist\*-setup.exe -Algorithm SHA256
+```
+
+已有仓库则先 `git fetch origin`、`git switch main`、`git pull --ff-only`，不用再次 clone。构建入口在缺少 Windows Node 时下载内置运行时；若仓库已有 `plugin/runtime/node-win-x64/node.exe`，则直接使用。无需 `npm install`，无需配置 OSS，也不会因为这个构建命令自动上传或创建 GitHub Release。
+
+有 `site/utils/release.ts` 时沿用上游版本源；没有该文件的公开 Fork 使用 `plugin/package.json` 的 `version`，并同步到 manifest 和 Inno Setup。若要发一个新的版本，修改实际生效的版本源再构建。目前版本为 `1.4.7` 时，产物是 `dist/lingxi-ai-1.4.7-setup.exe`。
+
+将 **EXE 和记录的 SHA256 校验值**复制到目标电脑。目标电脑提前装好 WPS，完全退出 WPS 后运行 EXE；安装包内带 Node 和插件，安装脚本只做本地注册和计划任务配置，**无需联网下载安装依赖，也无需目标电脑安装 Git、Node 或 Inno Setup**。内置 PowerShell/任务计划程序需可用，系统策略若禁止脚本或计划任务，安装会失败。无网安装不保证 WPS 自身激活/账号操作离线可用，也不包含模型权重。
+
+安装后使用云端 API 仍需网络；使用准备好的本地模型或内网模型按下面的模型配置指南操作。本项目 Windows 完整安装包的实机编译和安装未在当前 Linux 环境验证。
+
 ### 无网 Linux 电脑：安装完整包
 
 以当前桌面登录用户操作，先保存文档并关闭 WPS。在存放包和校验文件的目录执行；下面以 `1.4.7` / x64 为例，文件名和解压目录按你实际生成的版本替换：

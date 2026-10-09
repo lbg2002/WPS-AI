@@ -23,11 +23,21 @@ const ROOT = path.resolve(__dirname, '..', '..')
 const { syncVersions } = require('./sync-versions')
 const { archiveOldArtifacts } = require('./archive-old-artifacts')
 
-function readReleaseVersion() {
-  const fp = path.join(ROOT, 'site', 'utils', 'release.ts')
-  const m = fs.readFileSync(fp, 'utf8').match(/VERSION\s*=\s*['"]([^'"]+)['"]/)
-  if (!m) throw new Error('site/utils/release.ts 里找不到 VERSION')
-  return m[1]
+function readReleaseVersion(root = ROOT) {
+  const fp = path.join(root, 'site', 'utils', 'release.ts')
+  let version
+  if (fs.existsSync(fp)) {
+    const m = fs.readFileSync(fp, 'utf8').match(/VERSION\s*=\s*['"]([^'"]+)['"]/)
+    if (!m) throw new Error('site/utils/release.ts 里找不到 VERSION')
+    version = m[1]
+  } else {
+    // Public forks do not necessarily include the upstream download website.
+    version = JSON.parse(fs.readFileSync(path.join(root, 'plugin', 'package.json'), 'utf8')).version
+  }
+  if (typeof version !== 'string' || !/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(version)) {
+    throw new Error('构建版本号格式不合法（应形如 1.4.7 或 1.4.8-beta.1）')
+  }
+  return version
 }
 
 // 检查并按需补齐 plugin/runtime/node-<platform>/<binary>
@@ -297,7 +307,7 @@ function main() {
     process.exit(1)
   }
 
-  // 同步版本号（release.ts → package.json / manifest.json / iss）
+  // 网站 release.ts（存在时），否则 plugin/package.json → manifest.json / iss
   const version = readReleaseVersion()
   console.log(`\n=== build:${target} v${version} ===\n`)
   const r = syncVersions(version, { check: false })
@@ -315,4 +325,6 @@ function main() {
   if (target === 'linux') buildLinux(version, rest)
 }
 
-main()
+if (require.main === module) main()
+
+module.exports = { readReleaseVersion }
