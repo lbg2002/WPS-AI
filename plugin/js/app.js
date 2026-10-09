@@ -374,7 +374,7 @@
       "suggestedActions", "suggestedActionsList", "suggestedActionsClear",
       "chatStream", "chatPending", "chatPendingList",
       "chatApproveAllBtn", "chatRejectAllBtn",
-      "chatInput", "chatSendBtn", "chatStopBtn",
+      "chatInput", "chatSendBtn", "chatStopBtn", "selectionQuoteDraft",
       // 聊天面板体验：跳到最新 + 折叠中间轮次 + 单次模型 override
       "chatJumpLatest", "chatFoldToggle",
       "chatModelOverrideBtn", "chatModelOverrideBar", "chatModelOverrideText", "chatModelOverrideClearBtn",
@@ -13791,6 +13791,7 @@
   }
 
   function startNewConversation({ silent } = {}) {
+    clearSelectionQuoteDraft();
     // P2-4：归档前从当前对话抽一条跨对话记忆（复用压缩摘要，失败不阻塞）
     try { global.WpsAiChatMemory?.captureFromConversation?.(global.WpsAiConversations?.getCurrent?.()); } catch (e) {}
     // 当前对话已经自动 sync 过了；这里只需要清状态 + 开新的
@@ -13807,6 +13808,7 @@
   }
 
   function switchToConversation(id) {
+    clearSelectionQuoteDraft();
     const conv = global.WpsAiConversations?.listConversations?.().find((c) => c.id === id);
     if (!conv) return;
     // 把当前的先保存（即使没改也无所谓，syncMessages 会更新 updatedAt）
@@ -14185,6 +14187,10 @@
     els.chatSendBtn.addEventListener("click", async () => {
       const text = els.chatInput.value.trim();
       if (!text) return;
+      // 快照只在当前原文所属文档有效，发送时把完整引用放进模型上下文。
+      ensureSelectionQuoteDocIsolation();
+      const sentQuotes = selectionQuoteDraft.slice();
+      const textWithQuotes = global.WpsAiSelectionQuotes?.composePrompt(text, sentQuotes) || text;
       els.chatInput.value = "";
       // 临时模型：override 存在时把 activeChatModel 临时替换本轮用，发送后自动清 override
       // 复原原值，避免"临时"变成"永久"。
@@ -14197,7 +14203,9 @@
         );
       }
       try {
-        await runChatTurn(text);
+        await runChatTurn(textWithQuotes);
+        // 仅本轮附加引用；保留原本编辑的用户问题，不让引用自动继承到下一轮。
+        if (sentQuotes.length) clearSelectionQuoteDraft();
       } finally {
         if (usingOverride) {
           currentSettings.activeChatModel = savedActive;
@@ -15607,7 +15615,10 @@
 
     // 启动能力 chip + 「附加当前 PDF」按钮的初始状态；每 1.5s 复查活动文档变化
     updateCapabilityBadges();
-    setInterval(updateAttachActiveBtn, 1500);
+    setInterval(() => {
+      updateAttachActiveBtn();
+      ensureSelectionQuoteDocIsolation();
+    }, 1500);
   });
 
   // ============ 缓存管理 UI ============
@@ -16451,6 +16462,125 @@
     }
   }
 
+
+  // -------- 论文选区引用：PluginStorage 只负责跨窗口传递一次性快照 --------
+  const PENDING_SELECTION_QUOTES_KEY = "lingxi_ai_pending_selection_quotes_v1";
+  let selectionQuoteDraft = [];
+  let selectionQuoteDocPath = "";
+
+  function getActiveQuoteDocPath() {
+    try {
+      const app = global.WpsAiAddon?.getApplicationSync?.();
+      return String(app?.ActiveDocument?.FullName || "").trim();
+    } catch (e) { return ""; }
+  }
+
+  function clearSelectionQuoteDraft() {
+    selectionQuoteDraft = [];
+    selectionQuoteDocPath = "";
+    renderSelectionQuoteDraft();
+  }
+
+  function ensureSelectionQuoteDocIsolation() {
+    const normalize = global.WpsAiSelectionQuotes?.normalizePath || ((v) => String(v || ""));
+    if (selectionQuoteDocPath && normalize(selectionQuoteDocPath) !== normalize(getActiveQuoteDocPath())) {
+      clearSelectionQuoteDraft();
+    }
+  }
+
+  function renderSelectionQuoteDraft() {
+    const holder = els.selectionQuoteDraft;
+    if (!holder) return;
+    holder.textContent = "";
+    holder.classList.toggle("hidden", selectionQuoteDraft.length === 0);
+    selectionQuoteDraft.forEach((item, i) => {
+      const card = document.createElement("div");
+      card.className = "selection-quote-card";
+      const head = document.createElement("div");
+      head.className = "selection-quote-card-header";
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "selection-quote-toggle";
+      toggle.setAttribute("aria-expanded", String(!!item.expanded));
+      toggle.title = "展开或折叠引用原文";
+      const label = document.createElement("span");
+      label.className = "selection-quote-label";
+      label.textContent = "❝ 引用 " + (i + 1);
+      const preview = document.createElement("span");
+      preview.className = "selection-quote-preview";
+      preview.textContent = item.text.replace(/\\s+/g, " ").slice(0, 110);
+      toggle.append(label, preview);
+      toggle.addEventListener("click", () => {
+        item.expanded = !item.expanded;
+        renderSelectionQuoteDraft();
+      });
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "selection-quote-remove";
+      remove.setAttribute("aria-label", "移除引用 " + (i + 1));
+      remove.title = "移除这段引用";
+      remove.textContent = "×";
+      remove.addEventListener("click", () => {
+        selectionQuoteDraft = selectionQuoteDraft.filter((q) => q.id !== item.id);
+        if (!selectionQuoteDraft.length) selectionQuoteDocPath = "";
+        renderSelectionQuoteDraft();
+      });
+      head.append(toggle, remove);
+      card.appendChild(head);
+      const full = document.createElement("div");
+      full.className = "selection-quote-full" + (item.expanded ? "" : " hidden");
+      full.textContent = item.text;
+      card.appendChild(full);
+      holder.appendChild(card);
+    });
+  }
+
+  async function consumePendingSelectionQuotes() {
+    const helper = global.WpsAiSelectionQuotes;
+    if (!helper) return;
+    const storage = await getPluginStorage();
+    if (!storage?.getItem) return;
+    // 只让实际使用中的界面消费队列：避免隐藏的 TaskPane 抢走浮窗引用。
+    const inDialog = /[?&]pane=dialog(?:&|$)/.test(window.location.search);
+    let mode = "docked";
+    try { mode = storage.getItem("lingxi_ai_pane_mode_v1") || "docked"; } catch (e) {}
+    if (!inDialog && mode === "dialog") return;
+    if (inDialog && mode !== "dialog") {
+      const pane = global.WpsAiAddon?.getCurrentTaskPane?.();
+      if (pane?.Visible) return;
+    }
+    let raw = "";
+    try { raw = storage.getItem(PENDING_SELECTION_QUOTES_KEY) || ""; } catch (e) { return; }
+    if (!raw) return;
+    let entries;
+    try { entries = JSON.parse(raw); } catch (e) { entries = []; }
+    try {
+      if (typeof storage.removeItem === "function") storage.removeItem(PENDING_SELECTION_QUOTES_KEY);
+      else storage.setItem(PENDING_SELECTION_QUOTES_KEY, "");
+    } catch (e) {}
+    if (!Array.isArray(entries)) return;
+    ensureSelectionQuoteDocIsolation();
+    const docPath = getActiveQuoteDocPath();
+    let changed = false;
+    for (const item of entries) {
+      if (!helper.isValidQuote(item, docPath, Date.now())) continue;
+      const next = helper.addQuote(selectionQuoteDraft, item);
+      if (!Array.isArray(next)) {
+        showMessage(next?.error || "引用过多，请移除部分引用后重试。", "info");
+        continue;
+      }
+      if (next.length > selectionQuoteDraft.length) {
+        selectionQuoteDraft = next;
+        selectionQuoteDocPath = docPath;
+        changed = true;
+      }
+    }
+    if (changed) {
+      renderSelectionQuoteDraft();
+      activateTab("ai");
+    }
+  }
+
   async function consumePendingAction() {
     const storage = await getPluginStorage();
     if (!storage?.getItem) return;
@@ -16623,9 +16753,14 @@
 
   function startPendingActionWatcher() {
     setTimeout(consumePendingAction, 200);
+    setTimeout(consumePendingSelectionQuotes, 250);
     setInterval(consumePendingAction, 800);
+    setInterval(consumePendingSelectionQuotes, 800);
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) consumePendingAction();
+      if (!document.hidden) {
+        consumePendingAction();
+        consumePendingSelectionQuotes();
+      }
     });
   }
 
