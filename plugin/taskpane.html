@@ -82,25 +82,6 @@
         <div class="header-controls">
           <!-- 模型选择：底下保留隐藏 <select> 作为数据源（既兼容老 JS 又能让 form 控件读 value），
                上面盖一层自定义按钮 + 浮层，能在每条模型旁边画能力图标。 -->
-          <div class="model-select-wrap">
-            <select id="modelSelect" class="header-model-hidden" title="模型" aria-hidden="true"></select>
-            <button id="modelSelectBtn" class="model-select-btn" type="button" title="点击选择模型">
-              <span id="modelSelectLabel" class="model-select-label">—</span>
-              <span id="modelSelectCaps" class="model-select-caps"></span>
-              <svg class="model-select-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-            <div id="modelSelectPopup" class="model-select-popup hidden" role="listbox"></div>
-          </div>
-          <button id="refreshModelsBtn" class="icon-btn" type="button" title="刷新模型列表" aria-label="刷新模型列表">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="23 4 23 10 17 10"/>
-              <polyline points="1 20 1 14 7 14"/>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/>
-              <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/>
-            </svg>
-          </button>
           <span id="canaryHeaderBadge" class="badge badge-warning canary-header-badge hidden" title="你正在使用灰度版本，遇到问题可去「设置 → 程序信息」查看 / 回退">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.3l-4.8 2.6.9-5.4L4.2 7.7l5.4-.8L12 2z"/></svg>
             <span>灰度</span>
@@ -893,29 +874,6 @@
           </button>
         </div>
 
-        <!-- 修订模式（仅 WPS 文字）：开后 AI 改动记为 Word 原生修订，可逐条接受 / 全部回撤 -->
-        <div id="reviseModeBar" class="revise-mode-bar hidden">
-          <label class="revise-toggle" title="开启后 AI 对文档的改动会记为 Word 原生修订（可逐条接受 / 拒绝），作者标为「灵犀AI」，方便像审稿一样审 AI 的改动">
-            <input type="checkbox" id="reviseModeToggle" />
-            <span class="revise-toggle-track"><span class="revise-toggle-thumb"></span></span>
-            <span class="revise-toggle-text">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-              修订模式
-            </span>
-          </label>
-          <div id="reviseModeActions" class="revise-mode-actions hidden">
-            <button type="button" id="reviseAcceptAllBtn" class="revise-act-btn" title="接受全部修订">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              接受全部
-            </button>
-            <button type="button" id="reviseRejectAllBtn" class="revise-act-btn revise-act-reject" title="全部回撤：拒绝所有修订，还原到改动前">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
-              全部回撤
-            </button>
-            <span class="revise-applying" aria-live="polite"><span class="revise-spin" aria-hidden="true"></span>应用中…</span>
-          </div>
-        </div>
-
         <!-- 技能沉淀提示：多轮有实际操作后，提示用户把这轮对话总结成可复用技能 -->
         <div id="skillSuggestBar" class="skill-suggest-bar hidden">
           <span class="skill-suggest-icon" aria-hidden="true">
@@ -973,7 +931,55 @@
                 <line x1="8" y1="17" x2="16" y2="17"/>
               </svg>
             </span>
+            <!-- 修订模式紧凑入口：仅 WPS 文字；有修订时显示管理按钮 -->
+            <div id="reviseModeBar" class="revise-mode-bar hidden">
+              <label class="revise-toggle" title="修订模式：开启后 AI 修改以 Word 原生修订记录，可接受或拒绝">
+                <input type="checkbox" id="reviseModeToggle" aria-label="启用修订模式"/>
+                <span class="revise-toggle-text">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </span>
+              </label>
+              <button id="reviseManageBtn" class="revise-manage-btn hidden" type="button" title="管理现有修订" aria-label="管理现有修订" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+              </button>
+          <div id="reviseModeActions" class="revise-mode-actions hidden">
+            <button type="button" id="reviseAcceptAllBtn" class="revise-act-btn" title="接受全部修订">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+              接受全部
+            </button>
+            <button type="button" id="reviseRejectAllBtn" class="revise-act-btn revise-act-reject" title="全部回撤：拒绝所有修订，还原到改动前">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+              全部回撤
+            </button>
+            <span class="revise-applying" aria-live="polite"><span class="revise-spin" aria-hidden="true"></span>应用中…</span>
+          </div>
+
+            </div>
             <div class="chat-toolbar-spacer"></div>
+          <div class="model-select-wrap">
+            <select id="modelSelect" class="header-model-hidden" title="模型" aria-hidden="true"></select>
+            <button id="modelSelectBtn" class="model-select-btn" type="button" title="点击选择模型">
+              <span id="modelSelectLabel" class="model-select-label">—</span>
+              <span id="modelSelectCaps" class="model-select-caps"></span>
+              <svg class="model-select-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div id="modelSelectPopup" class="model-select-popup hidden">
+              <div class="model-select-options" role="listbox"></div>
+              <div class="model-select-footer">
+            <button id="refreshModelsBtn" class="icon-btn" type="button" title="刷新模型列表" aria-label="刷新模型列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="23 4 23 10 17 10"/>
+                <polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/>
+                <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/>
+              </svg>
+            </button>
+              </div>
+            </div>
+          </div>
+
             <!-- 思考强度切换：挪到发送按钮紧左侧，方便发消息前顺手调档 -->
             <span id="capThinking" class="cap-badge cap-thinking hidden" title="点击切换思考强度">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
