@@ -1146,7 +1146,24 @@
       doc.__wpsFocusReleaseCleanup = null;
     };
     const activeElement = () => doc.activeElement || document.activeElement;
+    // Linux/Wayland 的输入法预编辑阶段不能反复 ReleaseFocus/window.focus：
+    // WPS WebView 的 native IME context 可能因此被重新初始化，导致候选框消失。
+    let imeComposing = false;
+    let lastPointerReleaseAt = 0;
+    const imeDebug = () => {
+      try { return global.localStorage?.getItem("lingxi_ime_debug") === "1"; } catch (e) { return false; }
+    };
+    const imeDisableFocusRelease = () => {
+      try { return global.localStorage?.getItem("lingxi_ime_disable_focus_release") === "1"; } catch (e) { return false; }
+    };
+    const logIme = (kind, info = {}) => {
+      if (imeDebug()) console.info("[lingxi-ime]", kind, info);
+    };
     const release = () => {
+      if (imeComposing || imeDisableFocusRelease()) {
+        logIme("release-skipped", { composing: imeComposing, disabled: imeDisableFocusRelease() });
+        return false;
+      }
       let ok = false;
       // 跨平台尽力：CommandBars.ReleaseFocus 在 Windows / Linux 桌面版 WPS 上有，但不同平台 app 对象
       // 的取法不一（有时 getApplicationSync 拿到的那个没挂 CommandBars）。逐个候选 app 都试一遍，
@@ -1329,13 +1346,38 @@
       }
     });
 
-    onDoc("focusin", (ev) => { if (isEditable(ev.target)) release(); }, true);
+    onDoc("compositionstart", (ev) => {
+      if (!isEditable(ev.target)) return;
+      imeComposing = true;
+      logIme("compositionstart", { target: ev.target.id || ev.target.tagName });
+    }, true);
+    onDoc("compositionend", (ev) => {
+      if (!isEditable(ev.target)) return;
+      imeComposing = false;
+      logIme("compositionend", { target: ev.target.id || ev.target.tagName });
+    }, true);
+    onDoc("beforeinput", (ev) => {
+      if (isEditable(ev.target)) {
+        logIme("beforeinput", { inputType: ev.inputType, isComposing: !!ev.isComposing });
+      }
+    }, true);
+    onDoc("focusin", (ev) => {
+      if (!isEditable(ev.target)) return;
+      logIme("focusin", { target: ev.target.id || ev.target.tagName });
+      // pointerdown 已让出 OS 焦点时，不再重复 ReleaseFocus，减少 IME context 被重置。
+      if (!imeComposing && Date.now() - lastPointerReleaseAt >= 250) release();
+    }, true);
     // 右侧聊天区域一被点击（不限可编辑元素）就让出主窗口 OS 焦点 —— 根因修复：
     // 否则左侧文档的插入点(光标)仍然活着，Ctrl+V 会被同时投递给文档和聊天框 → 双份粘贴。
     // 用 pointerdown 捕获阶段：早于 focus 结算，抢焦点最及时，比只在 focusin(可编辑元素) 时释放覆盖更全。
-    onDoc("pointerdown", () => { release(); }, true);
+    onDoc("pointerdown", () => {
+      if (imeComposing) return;
+      lastPointerReleaseAt = Date.now();
+      release();
+    }, true);
     // 编辑快捷键按下的瞬间再让一次焦点，防止主窗口在 focus 后又抢回去（focus 一次性不够）
     onDoc("keydown", (ev) => {
+      if (imeComposing || ev.isComposing || ev.keyCode === 229) return;
       if (!(ev.ctrlKey || ev.metaKey) || ev.altKey) return;
       const editEl = editableTarget(ev.target);
       if (!editEl) return;
