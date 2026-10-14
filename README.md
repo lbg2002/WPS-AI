@@ -1,36 +1,40 @@
-<h1 align="center">灵犀AI · WPS Office 多宿主 AI 助手</h1>
+<div align="center">
 
-<p align="center">
-  一个 TaskPane 兼容 <b>WPS 文字 / 表格 / 演示 / PDF</b> 四端的 AI 助手，挂多家 AI（Codex / OpenAI / Anthropic / Gemini / Azure / OpenAI 兼容），AI 通过工具调用<b>直接读写文档</b>。
+# 🪄 灵犀 AI · WPS Office 智能助手
+
+**让 WPS 文字、表格、演示和 PDF 都能使用你自己的 AI 模型。**  
+*An open-source, multi-provider AI assistant for WPS Writer, Spreadsheets, Presentation and PDF.*
+
+[![GitHub Release](https://img.shields.io/github/v/release/lbg2002/WPS-AI?label=Fork%20Release&color=5589e8)](https://github.com/lbg2002/WPS-AI/releases/latest)
+![Windows Linux](https://img.shields.io/badge/本仓库安装包-Windows%20%7C%20Linux-3971ac)
+![WPS](https://img.shields.io/badge/WPS-文字%20%7C%20表格%20%7C%20演示%20%7C%20PDF-d96766)
+![License](https://img.shields.io/badge/License-MIT-3c9b78)
+
+[**⬇️ 下载本 Fork 的 Windows / Linux 安装包**](https://github.com/lbg2002/WPS-AI/releases/tag/v1.4.8) · [🧭 5 分钟上手](#-5-分钟上手) · [💡 功能介绍](#-功能一览) · [🔧 Linux 部署](#-部署与无网安装) · [🌐 English](README.en.md)
+
+<p>
+<img src="img/1.png" width="32%" alt="灵犀 AI WPS Office 助手功能与对话界面截图 1"/>
+<img src="img/2.png" width="32%" alt="灵犀 AI WPS Word 文档助手界面截图 2"/>
+<img src="img/3.png" width="32%" alt="灵犀 AI 模型配置与文档工作流界面截图 3"/>
 </p>
+<sub>现有项目界面截图 · 实际可用性受 WPS 版本及宿主平台影响</sub>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT" />
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue" alt="Platform" />
-  <img src="https://img.shields.io/badge/WPS-文字·表格·演示·PDF-red" alt="WPS" />
-  <img src="https://img.shields.io/badge/vibe--coded-100%25-ff69b4" alt="Vibe Coded" />
-</p>
+</div>
 
-<p align="center">
-  <a href="https://wps-ai.llteac.cn/download"><b>⬇ 下载</b></a> ·
-  <a href="#-5-分钟上手">5 分钟上手</a> ·
-  <a href="#-部署与无网安装">部署与无网安装</a> ·
-  <a href="#-功能一览">功能一览</a> ·
-  <a href="#-项目结构">项目结构</a> ·
-  <a href="#-二次开发">二次开发</a> ·
-  <a href="#-已知限制">已知限制</a> ·
-  <a href="README.en.md">English</a>
-</p>
+> **关于版本来源：** 这里是 `lbg2002/WPS-AI` 的社区 Fork，包含面向 Linux 的右侧 TaskPane、正文选区引用和界面交互改进。**本仓库 Releases 与上游官方网站的安装包不是同一发布渠道**。需要本 Fork 的修改，请优先使用下方的 GitHub Release；macOS 暂无此 Fork 的正式安装包。
 
-> 🤖 100% 由 Vibe coding 完成：架构、provider 适配、PPT 主题/图表、Word 渲染、跨平台安装器、文档全程由 [Claude](https://claude.com/claude-code) 和人类对话迭代而来。仓库里没有一行手敲代码 —— 也欢迎你 fork 自己 vibe。
+## 📦 下载与安装（本 Fork）
 
-<p align="center">
-  <img src="img/1.png" width="32%" />
-  <img src="img/2.png" width="32%" />
-  <img src="img/3.png" width="32%" />
-</p>
+| 平台 | Release 安装包 | 下载 |
+| :-- | :-- | :-- |
+| **Windows 10/11 · x64** | `lingxi-ai-1.4.8-setup.exe` | [直接下载 EXE](https://github.com/lbg2002/WPS-AI/releases/download/v1.4.8/lingxi-ai-1.4.8-setup.exe) |
+| **Ubuntu / Debian · x64** | `lingxi-ai_1.4.8_amd64.deb` | [直接下载 DEB](https://github.com/lbg2002/WPS-AI/releases/download/v1.4.8/lingxi-ai_1.4.8_amd64.deb) |
+| **Linux · ARM64** | `lingxi-ai_1.4.8_arm64.deb` | [直接下载 DEB](https://github.com/lbg2002/WPS-AI/releases/download/v1.4.8/lingxi-ai_1.4.8_arm64.deb) |
+| **Linux · x64 / ARM64** | 完整便携 `.tar.gz` | [全部安装包与校验值](https://github.com/lbg2002/WPS-AI/releases/tag/v1.4.8) |
 
----
+Windows 双击安装器；Ubuntu / Debian 在下载目录执行 `sudo apt install ./lingxi-ai_1.4.8_amd64.deb`（ARM64 改为对应文件名）。安装前请保存文档、关闭 WPS，安装后重新启动。安装包内置 Node 运行时，不需要在目标电脑单独安装 Node。
+
+模型服务可以使用 OpenAI、Claude、Gemini、DeepSeek、GLM 等兼容接口，或已部署的本地 Ollama；**云端模型请求需要相应网络和授权**，并非默认离线 AI。
 
 ## 本 Fork 的 main 分支
 
@@ -41,7 +45,7 @@
 - **后台恢复**：静态服务监测自己启动的代理子进程，连续健康检查失败后自动重启。具体卡死触发原因尚未完全定位，恢复会中断当时正在执行的请求。
 - **验证范围**：相关 Node 模拟测试通过；用户已反馈其 Linux 环境侧栏输入、引用和宽度问题得到改善。各 WPS 版本的右键菜单、宿主能力及 Windows/macOS 安装仍需对应环境验证，右键不可用时使用功能区入口。
 
-下方官网安装包属于上游发布，不保证含本 Fork 的修改。要使用这里的 `main`，请按本 README 的部署指南从该分支构建安装包，或同步源码到已有 Linux 安装。
+本 Fork 自己的 GitHub Releases 已提供 Windows x64、Linux x64/ARM64 安装包。若要测试最新未发布的源码变更，请使用下面的从源码部署指南；上游官网下载的包不保证包含本 Fork 修改。
 
 ## ✨ 亮点
 
@@ -68,13 +72,9 @@ WPS 宿主（文字/表格/演示/PDF）
 
 ### 1. 下载安装包
 
-前往 **[下载页 → wps-ai.llteac.cn/download](https://wps-ai.llteac.cn/download)** 获取对应平台安装包。各平台包都内置 Node 运行时，**无需单独装 Node**。
+优先选择本仓库的 **[v1.4.8 Release](https://github.com/lbg2002/WPS-AI/releases/tag/v1.4.8)**，按上方安装表下载 Windows / Linux 安装包，包含所需 Node 运行时，无须另行安装 Node。
 
-| 平台 | 安装包 | 大小 | 下载 |
-|---|---|---|---|
-| **Windows** | `.exe` 安装器 | ~30 MB | [⬇ 下载](https://wps-ai.llteac.cn/download) |
-| **macOS** | `.pkg`（Intel + Apple Silicon） | ~35 MB | [⬇ 下载](https://wps-ai.llteac.cn/download) |
-| **Linux** | x64 / arm64 | ~35 MB | [⬇ 下载](https://wps-ai.llteac.cn/download) |
+本 Fork 当前没有发布 macOS 安装包。macOS 用户可以查看 [上游下载页](https://wps-ai.llteac.cn/download)，但那是上游软件，**不保证包含此 Fork 的 Linux/引用交互修改**。
 
 ### 2. 安装
 
