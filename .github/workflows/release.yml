@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/release.yml'
+      - 'plugin/package.json'
 
 permissions:
   contents: read
@@ -25,7 +26,7 @@ jobs:
           node-version: '22'
       # Generated-file tests normalize the Windows checkout CRLF line endings.
       - name: Check Windows shared behavior and release helpers
-        run: node --test plugin/test/release-version.test.js plugin/test/release-assets.test.js plugin/test/offline-installer.test.js plugin/test/pane-mode.test.js plugin/test/quote-selection.test.js plugin/test/linux-dialog-routing.test.js plugin/test/ribbon-callbacks.test.js plugin/test/ui-compact.test.js
+        run: node --test plugin/test/quick-prompt-manager.test.js plugin/test/release-version.test.js plugin/test/release-assets.test.js plugin/test/offline-installer.test.js plugin/test/pane-mode.test.js plugin/test/quote-selection.test.js plugin/test/linux-dialog-routing.test.js plugin/test/ribbon-callbacks.test.js plugin/test/ui-compact.test.js
       - name: Prepare verified portable Node and compiler
         shell: pwsh
         run: |
@@ -137,6 +138,8 @@ jobs:
           - DEB：依赖预先齐全时执行 sudo dpkg -i；无网环境推荐完整 tar 包。
           - Windows：关闭 WPS 后运行 EXE，自动配置插件与登录计划任务。
           - 云端 API 仍需联网；离线推理需另备本地模型，或连接内网模型。
+          - v1.4.9 新增「设置 → 快捷提示词」，支持按 WPS 文字/表格/演示/PDF 管理快捷指令、修改「更学术」「更正式」等风格指令并单项恢复默认。
+          - 自定义指令保留现有的选区预览、差异对比、确认替换流程；存储持久化，按宿主隔离。
           - 包含选区引用、Linux 面板内预览与输入修复、宽度保持、后台健康恢复。
           - 包附 SHA256SUMS，请核对文件完整性。Windows EXE 未进行代码签名。
           - CI 编译、打包和 Node 测试不代表 WPS 实机交互测试；arm64 采用交叉打包。
