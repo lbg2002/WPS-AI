@@ -22,7 +22,8 @@
   }
   function saveChanges() {
     const a = activeAction();
-    if (!a || !dirty) return true;
+    if (!dirty) return true;
+    if (!a) return false;
     const input = $("quickPromptEditor");
     try {
       API().setPrompt(selected, activeKey, input.value);
@@ -71,7 +72,7 @@
     renderEditor();
   }
   function switchHost(host) {
-    if (!Object.hasOwn(HOSTS, host) || (dirty && !saveChanges())) return;
+    if (!Object.prototype.hasOwnProperty.call(HOSTS, host) || (dirty && !saveChanges())) return;
     selected = host;
     activeKey = API().getEditableActions(selected)[0]?.key || "";
     $("quickPromptSearch").value = "";
