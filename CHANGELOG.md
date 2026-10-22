@@ -4,6 +4,14 @@
 
 ## v1.4.8（开发中）
 
+### 快捷功能提示词管理
+
+- 设置新增「快捷提示词」：按文字、表格、演示、PDF 选择快捷功能，支持搜索、修改指令与恢复默认；原按钮位置、名称与业务流程不变。
+- 「更学术」「更正式」等选区改写操作直接修改实际使用的 `instruction`，其他功能修改 `prompt`，保留原有的预览确认和写回流程。
+- 自定义内容通过 `WpsAiStore` 持久化，并通过 WPS `PluginStorage` 供功能区快捷入口读取；未修改的功能使用原始预设。
+- 新增快捷指令回归测试，验证跨宿主隔离、输入检查与恢复默认。
+
+
 ### 多协议供应商（加强聊天回显适配）
 
 - **新增 Google Gemini 原生协议**（`js/providers/gemini.js`）：`:streamGenerateContent?alt=sse`，解析 `parts[].text`（正文）/ `parts[].thought`（思考）/ `parts[].functionCall`（工具）；鉴权 `x-goog-api-key`；消息 `contents(user/model)` + `systemInstruction`；functionResponse 回填进 user 轮（Gemini 强制 user/model 交替）；schema 过 sanitize 只留 OpenAPI 子集
