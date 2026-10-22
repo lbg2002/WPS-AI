@@ -335,7 +335,7 @@
   // 非 TaskPane 的 index.html 也必须初始化托管存储，才能读取其他宿主
   // 已持久化的快捷设置；不重复初始化 TaskPane 中由 app.js 管理的存储。
   try {
-    if (!/(?:^|\\/)taskpane\\.html$/i.test(global.location?.pathname || "")) {
+    if (!/(?:^|\/)taskpane\.html$/i.test(global.location?.pathname || "")) {
       global.WpsAiStore?.init?.().catch(() => {});
     }
   } catch (error) {}
