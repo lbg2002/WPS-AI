@@ -200,6 +200,10 @@
                 </svg>
                 <span>统一配置</span>
               </button>
+              <button type="button" class="settings-sidebar-btn" data-settings-panel="quick-prompts" role="tab">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z"/><path d="M19 17v5m-2.5-2.5h5"/></svg>
+                <span>快捷提示词</span>
+              </button>
               <button type="button" class="settings-sidebar-btn" data-settings-panel="skills" role="tab">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M12 2L15 8l6 1-4.5 4.5L18 20l-6-3-6 3 1.5-6.5L3 9l6-1z"/>
@@ -385,6 +389,34 @@
                     <span>HTML 模板插入 PPT 时分图层（实验）</span>
                   </label>
                   <small class="field-tip">默认关闭。开启后把 HTML 渲染拆成「背景 + 每个顶层元素一张」共 N 张图片插入 PPT，每张都是独立 shape，可在 PPT 里单独选中/移动/缩放。注意：layered 模式偶发"slide 留白"问题（all-layers-fail 时已自动 fallback 到单图）。关闭则整页只插一张大图（稳定路径）。</small>
+                </div>
+              </section>
+
+              <section class="settings-panel hidden" data-settings-panel="quick-prompts">
+                <div class="panel-header"><h3>快捷提示词</h3></div>
+                <div class="quick-pm-hosts" role="tablist" aria-label="Office 组件">
+                  <button type="button" data-quick-pm-host="wps" class="active">文字</button>
+                  <button type="button" data-quick-pm-host="et">表格</button>
+                  <button type="button" data-quick-pm-host="wpp">演示</button>
+                  <button type="button" data-quick-pm-host="pdf">PDF</button>
+                </div>
+                <div class="quick-pm-layout">
+                  <aside class="quick-pm-list-pane">
+                    <input type="search" id="quickPromptSearch" placeholder="搜索快捷功能" aria-label="搜索快捷功能"/>
+                    <div id="quickPromptActionList" class="quick-pm-list"></div>
+                  </aside>
+                  <div class="quick-pm-edit-pane">
+                    <div id="quickPromptEditorEmpty" class="quick-pm-empty hidden">选择快捷功能</div>
+                    <div id="quickPromptEditorArea" class="quick-pm-editor">
+                      <h4 id="quickPromptEditorTitle"></h4>
+                      <textarea id="quickPromptEditor" spellcheck="false" aria-label="快捷操作提示词"></textarea>
+                      <div class="quick-pm-footer">
+                        <span id="quickPromptManagerStatus" role="status"></span>
+                        <button id="quickPromptReset" class="ghost-btn compact-btn" type="button">恢复默认</button>
+                        <button id="quickPromptSave" class="primary-btn compact-btn" type="button">保存</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
 

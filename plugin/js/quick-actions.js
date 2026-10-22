@@ -219,10 +219,126 @@
     pdf: ["translate", "document", "smart"]
   };
 
-  function findByKey(host, key) {
-    const list = QUICK_ACTIONS[host] || [];
-    return list.find((a) => a.key === key) || null;
+  // 用户修改的是快捷动作的业务指令；selectionTone / documentReport 等 flow 的
+  // instruction 才会发送给改写模型，不能只改其固定的调度 prompt。
+  const PROMPT_SETTINGS_KEY = "lingxi_quick_action_prompts_v1";
+  const MAX_PROMPT_LENGTH = 12000;
+  const HOSTS = ["wps", "et", "wpp", "pdf"];
+  let sessionConfig = { version: 1, updatedAt: 0, overrides: {} };
+
+  function editableField(action) {
+    if (!action || action.modal || action.flow === "quoteSelection") return "";
+    if (typeof action.instruction === "string") return "instruction";
+    return typeof action.prompt === "string" ? "prompt" : "";
   }
+
+  function getDefaultAction(host, key) {
+    return (QUICK_ACTIONS[host] || []).find((a) => a.key === key) || null;
+  }
+
+  function normalizeConfig(input) {
+    const config = { version: 1, updatedAt: Number(input?.updatedAt) || 0, overrides: {} };
+    const entries = input?.overrides;
+    if (!entries || typeof entries !== "object" || Array.isArray(entries)) return config;
+    for (const host of HOSTS) {
+      const values = entries[host];
+      if (!values || typeof values !== "object" || Array.isArray(values)) continue;
+      const valid = {};
+      for (const action of QUICK_ACTIONS[host] || []) {
+        if (!editableField(action)) continue;
+        const value = values[action.key];
+        if (typeof value !== "string") continue;
+        const trimmed = value.trim();
+        if (trimmed && trimmed.length <= MAX_PROMPT_LENGTH) valid[action.key] = trimmed;
+      }
+      if (Object.keys(valid).length) config.overrides[host] = valid;
+    }
+    return config;
+  }
+
+  function readConfig(raw) {
+    if (!raw) return null;
+    try { return normalizeConfig(JSON.parse(raw)); } catch (error) { return null; }
+  }
+
+  function getHostStorage() {
+    try { return global.WpsAiAddon?.getApplicationSync?.()?.PluginStorage || null; }
+    catch (error) { return null; }
+  }
+
+  function getConfig() {
+    // 设置窗和 Ribbon 通常是不同的 WebView；PluginStorage 即时共享，
+    // WpsAiStore(SQLite) 负责跨会话持久化，按更新时间选新版本避免旧值回写。
+    let config = sessionConfig;
+    try {
+      const stored = readConfig(global.WpsAiStore?.getItem?.(PROMPT_SETTINGS_KEY));
+      if (stored && stored.updatedAt >= config.updatedAt) config = stored;
+    } catch (error) {}
+    try {
+      const mirrored = readConfig(getHostStorage()?.getItem?.(PROMPT_SETTINGS_KEY));
+      if (mirrored && mirrored.updatedAt >= config.updatedAt) config = mirrored;
+    } catch (error) {}
+    sessionConfig = config;
+    return config;
+  }
+
+  function persistConfig(input) {
+    const config = normalizeConfig(input);
+    config.updatedAt = Math.max(Date.now(), getConfig().updatedAt + 1);
+    const raw = JSON.stringify(config);
+    // 只有主存储写入成功，才更新内存和 Ribbon 镜像。
+    if (!global.WpsAiStore?.setItem) throw new Error("设置存储尚未初始化");
+    global.WpsAiStore.setItem(PROMPT_SETTINGS_KEY, raw);
+    sessionConfig = config;
+    try { getHostStorage()?.setItem?.(PROMPT_SETTINGS_KEY, raw); } catch (error) {}
+    return config;
+  }
+
+  function getEditableActions(host) {
+    return (QUICK_ACTIONS[host] || []).filter((action) => !!editableField(action));
+  }
+
+  function findByKey(host, key) {
+    const action = getDefaultAction(host, key);
+    if (!action) return null;
+    const field = editableField(action);
+    if (!field) return action;
+    const customized = getConfig().overrides[host]?.[key];
+    return customized ? { ...action, [field]: customized } : action;
+  }
+
+  function setPrompt(host, key, value) {
+    const action = getDefaultAction(host, key);
+    if (!editableField(action)) throw new Error("此快捷功能不可修改提示词");
+    if (typeof value !== "string" || !value.trim()) throw new Error("提示词不能为空");
+    if (value.trim().length > MAX_PROMPT_LENGTH) throw new Error("提示词超出长度限制");
+    const next = getConfig();
+    const overrides = { ...next.overrides, [host]: { ...(next.overrides[host] || {}) } };
+    const normalized = value.trim();
+    if (normalized === action[editableField(action)]) delete overrides[host][key];
+    else overrides[host][key] = normalized;
+    if (!Object.keys(overrides[host]).length) delete overrides[host];
+    persistConfig({ overrides });
+    return findByKey(host, key);
+  }
+
+  function resetPrompt(host, key) {
+    if (!editableField(getDefaultAction(host, key))) throw new Error("此快捷功能不可修改提示词");
+    const next = getConfig();
+    const overrides = { ...next.overrides, [host]: { ...(next.overrides[host] || {}) } };
+    delete overrides[host][key];
+    if (!Object.keys(overrides[host]).length) delete overrides[host];
+    persistConfig({ overrides });
+    return findByKey(host, key);
+  }
+
+  // 非 TaskPane 的 index.html 也必须初始化托管存储，才能读取其他宿主
+  // 已持久化的快捷设置；不重复初始化 TaskPane 中由 app.js 管理的存储。
+  try {
+    if (!/(?:^|\\/)taskpane\\.html$/i.test(global.location?.pathname || "")) {
+      global.WpsAiStore?.init?.().catch(() => {});
+    }
+  } catch (error) {}
 
   /**
    * 把宿主下的所有 chip 按 category 分组返回（保留 prefill 标记，
@@ -255,6 +371,14 @@
     CATEGORY_LABELS,
     CATEGORY_ICON,
     CATEGORY_ORDER_BY_HOST,
+    PROMPT_SETTINGS_KEY,
+    MAX_PROMPT_LENGTH,
+    editableField,
+    getDefaultAction,
+    getEditableActions,
+    getConfig,
+    setPrompt,
+    resetPrompt,
     findByKey,
     getRibbonGroups
   };

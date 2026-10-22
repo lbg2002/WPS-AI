@@ -171,6 +171,7 @@
   ];
 
   if (isTaskpanePage) {
+    scripts.push("js/quick-prompt-manager.js");
     scripts.push("js/app.js");
   }
 

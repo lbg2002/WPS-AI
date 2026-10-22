@@ -9692,3 +9692,27 @@ body.pure-mode .image-gen-panel.hidden { display: none; }
   font: inherit; max-height: 160px; overflow-y: auto; }
 .chat-quote-remove { position: absolute; top: 5px; right: 6px; background: transparent;
   border: 0; color: inherit; cursor: pointer; padding: 3px 6px; }
+
+/* 快捷提示词：紧凑双栏编辑器，复用现有设置配色 */
+.settings-panel[data-settings-panel="quick-prompts"] { min-height: 0; }
+.quick-pm-hosts { display:flex; gap:5px; padding:0 0 10px; flex-wrap:wrap; }
+.quick-pm-hosts button { color:var(--text-secondary, #64748b); background:transparent; border:1px solid var(--border); border-radius:7px; padding:6px 12px; cursor:pointer; }
+.quick-pm-hosts button.active { color:var(--accent, #2563eb); border-color:var(--accent, #2563eb); font-weight:600; }
+.quick-pm-layout { display:grid; grid-template-columns:minmax(130px, 0.35fr) minmax(0, 1fr); flex:1; min-height:0; gap:10px; }
+.quick-pm-list-pane, .quick-pm-edit-pane { min-width:0; min-height:0; display:flex; flex-direction:column; }
+.quick-pm-list-pane { border:1px solid var(--border); border-radius:9px; padding:7px; }
+#quickPromptSearch { width:100%; min-width:0; padding:7px; border:1px solid var(--border); border-radius:7px; background:var(--input-bg, transparent); color:inherit; }
+.quick-pm-list { overflow-y:auto; flex:1; margin-top:6px; }
+.quick-pm-item { width:100%; border:0; border-radius:6px; background:transparent; color:inherit; cursor:pointer; padding:9px 7px; display:flex; align-items:center; justify-content:space-between; gap:5px; text-align:left; }
+.quick-pm-item:hover { background:var(--hover-bg, rgba(127,127,127,.1)); }
+.quick-pm-item.active { background:var(--hover-bg, rgba(69,123,214,.12)); font-weight:600; }
+.quick-pm-item i { font-size:10px; font-weight:normal; font-style:normal; white-space:nowrap; opacity:.7; }
+.quick-pm-edit-pane { border:1px solid var(--border); border-radius:9px; padding:12px; }
+.quick-pm-editor { min-height:0; flex:1; display:flex; flex-direction:column; }
+.quick-pm-editor h4 { font-size:14px; margin:0 0 8px; }
+#quickPromptEditor { flex:1; min-height:160px; min-width:0; width:100%; resize:none; font-size:12.5px; line-height:1.7; font-family:inherit; padding:10px; border:1px solid var(--border); border-radius:7px; background:var(--input-bg, transparent); color:inherit; }
+.quick-pm-footer { display:flex; justify-content:flex-end; align-items:center; gap:7px; padding-top:10px; }
+#quickPromptManagerStatus { margin-right:auto; font-size:12px; opacity:.7; }
+#quickPromptManagerStatus.is-error { color:#dc2626; opacity:1; }
+.quick-pm-empty { padding:14px; opacity:.65; }
+@media(max-width:600px) { .quick-pm-layout { grid-template-columns:minmax(115px, 0.42fr) minmax(0, 1fr); gap:6px; } .quick-pm-edit-pane { padding:7px; } }
