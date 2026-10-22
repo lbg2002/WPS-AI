@@ -10,7 +10,7 @@
 ![WPS](https://img.shields.io/badge/WPS-文字%20%7C%20表格%20%7C%20演示%20%7C%20PDF-d96766)
 ![License](https://img.shields.io/badge/License-MIT-3c9b78)
 
-[**⬇️ 下载本 Fork 的 Windows / Linux 安装包**](https://github.com/lbg2002/WPS-AI/releases/tag/v1.4.8) · [🧭 5 分钟上手](#-5-分钟上手) · [💡 功能介绍](#-功能一览) · [🔧 Linux 部署](#-部署与无网安装) · [🌐 English](README.en.md)
+[**⬇️ 下载本 Fork 的 Windows / Linux 安装包**](https://github.com/lbg2002/WPS-AI/releases/tag/v1.4.9) · [🧭 5 分钟上手](#-5-分钟上手) · [💡 功能介绍](#-功能一览) · [🔧 Linux 部署](#-部署与无网安装) · [🌐 English](README.en.md)
 
 <p>
 <img src="img/1.png" width="32%" alt="灵犀 AI WPS Office 助手功能与对话界面截图 1"/>
@@ -27,18 +27,18 @@
 
 | 平台 | Release 安装包 | 下载 |
 | :-- | :-- | :-- |
-| **Windows 10/11 · x64** | `lingxi-ai-1.4.8-setup.exe` | [直接下载 EXE](https://github.com/lbg2002/WPS-AI/releases/download/v1.4.8/lingxi-ai-1.4.8-setup.exe) |
-| **Ubuntu / Debian · x64** | `lingxi-ai_1.4.8_amd64.deb` | [直接下载 DEB](https://github.com/lbg2002/WPS-AI/releases/download/v1.4.8/lingxi-ai_1.4.8_amd64.deb) |
-| **Linux · ARM64** | `lingxi-ai_1.4.8_arm64.deb` | [直接下载 DEB](https://github.com/lbg2002/WPS-AI/releases/download/v1.4.8/lingxi-ai_1.4.8_arm64.deb) |
-| **Linux · x64 / ARM64** | 完整便携 `.tar.gz` | [全部安装包与校验值](https://github.com/lbg2002/WPS-AI/releases/tag/v1.4.8) |
+| **Windows 10/11 · x64** | `lingxi-ai-1.4.9-setup.exe` | [直接下载 EXE](https://github.com/lbg2002/WPS-AI/releases/download/v1.4.9/lingxi-ai-1.4.9-setup.exe) |
+| **Ubuntu / Debian · x64** | `lingxi-ai_1.4.9_amd64.deb` | [直接下载 DEB](https://github.com/lbg2002/WPS-AI/releases/download/v1.4.9/lingxi-ai_1.4.9_amd64.deb) |
+| **Linux · ARM64** | `lingxi-ai_1.4.9_arm64.deb` | [直接下载 DEB](https://github.com/lbg2002/WPS-AI/releases/download/v1.4.9/lingxi-ai_1.4.9_arm64.deb) |
+| **Linux · x64 / ARM64** | 完整便携 `.tar.gz` | [全部安装包与校验值](https://github.com/lbg2002/WPS-AI/releases/tag/v1.4.9) |
 
-Windows 双击安装器；Ubuntu / Debian 在下载目录执行 `sudo apt install ./lingxi-ai_1.4.8_amd64.deb`（ARM64 改为对应文件名）。安装前请保存文档、关闭 WPS，安装后重新启动。安装包内置 Node 运行时，不需要在目标电脑单独安装 Node。
+Windows 双击安装器；Ubuntu / Debian 在下载目录执行 `sudo apt install ./lingxi-ai_1.4.9_amd64.deb`（ARM64 改为对应文件名）。升级安装前请保存文档、完全退出 WPS，安装后重新启动。安装包内置 Node 运行时，不需要在目标电脑单独安装 Node。
 
 模型服务可以使用 OpenAI、Claude、Gemini、DeepSeek、GLM 等兼容接口，或已部署的本地 Ollama；**云端模型请求需要相应网络和授权**，并非默认离线 AI。
 
 ## 本 Fork 的 main 分支
 
-本仓库 `lbg2002/WPS-AI` 的 `main` 已合入 Linux 右侧面板、紧凑聊天工具栏、正文选区引用、后台卡住自动恢复及面板宽度保持修复。
+本仓库 `lbg2002/WPS-AI` 的 `main` 包含快捷提示词管理、Linux 右侧面板、紧凑聊天工具栏、正文选区引用、后台健康恢复及面板宽度保持修复。
 
 - **正文引用**：选中文本后右键「引用到灵犀AI」，或功能区「引用选区」。多个引用以灰色折叠卡片显示，可展开、删除，发送问题时才附带完整原文；切换文档清空待发送引用。未保存的文档需先保存。
 - **Linux 输入**：默认使用右侧 TaskPane；润色比对、设置等使用面板内弹层。复用面板时保留手动调整的宽度，完全退出 WPS 后新建面板仍用默认宽度。
@@ -47,11 +47,20 @@ Windows 双击安装器；Ubuntu / Debian 在下载目录执行 `sudo apt instal
 
 本 Fork 自己的 GitHub Releases 已提供 Windows x64、Linux x64/ARM64 安装包。若要测试最新未发布的源码变更，请使用下面的从源码部署指南；上游官网下载的包不保证包含本 Fork 修改。
 
-## ✍️ 快捷提示词管理（开发分支）
+## ✍️ 快捷提示词管理（v1.4.9 新增）
 
-在 **设置 → 快捷提示词** 中，可按 WPS 文字、表格、演示与 PDF 查找快捷功能。选择「更学术」「更正式」等按钮后，直接修改实际执行的指令并保存，之后功能区快捷操作会使用自定义内容。支持单项恢复默认，未修改的按钮继续沿用内置指令；原有选区预览和确认替换流程保持不变。
+通过 **灵犀AI → ⚙ 设置 → 快捷提示词** 管理功能区「快捷指令」的执行内容，不必修改源码：
 
-> 此功能目前位于功能分支，尚未包含在 v1.4.8 Release 安装包中。
+1. 在 **文字 / 表格 / 演示 / PDF** 中选择组件，搜索需要调整的快捷功能。
+2. 左侧选择「更学术」「更正式」「快速润色」「扩写」等操作，右侧直接编辑实际使用的提示词。
+3. 点击 **保存**，此后从 WPS 功能区点击对应快捷按钮就会使用新指令；点击 **恢复默认** 可单独撤销自定义。
+
+- **完整保留原交互**：修改的是业务指令，不会改变选区读取、改写预览、差异对比和确认替换流程。
+- **持久保存**：设置通过插件数据存储保存，配合 WPS PluginStorage 供不同窗口的快捷入口读取，重启后继续使用。
+- **按组件隔离**：Word、Excel、PPT 与 PDF 的快捷指令分别管理；不支持编辑的纯窗口操作不出现在列表中。
+- **默认不受影响**：没有修改过的操作继续使用内置预设；请勿在自定义指令中加入敏感密钥。
+
+<sub>说明：当前图片为此前版本的实际界面截图，尚不包含新增设置页；CI 负责代码测试与安装包打包，不等同于各 WPS 宿主的实机验收。</sub>
 
 ## ✨ 亮点
 
@@ -78,15 +87,13 @@ WPS 宿主（文字/表格/演示/PDF）
 
 ### 1. 下载安装包
 
-优先选择本仓库的 **[v1.4.8 Release](https://github.com/lbg2002/WPS-AI/releases/tag/v1.4.8)**，按上方安装表下载 Windows / Linux 安装包，包含所需 Node 运行时，无须另行安装 Node。
+优先选择本仓库的 **[v1.4.9 Release](https://github.com/lbg2002/WPS-AI/releases/tag/v1.4.9)**，按上方安装表下载 Windows / Linux 安装包，包含所需 Node 运行时，无须另行安装 Node。
 
 本 Fork 当前没有发布 macOS 安装包。macOS 用户可以查看 [上游下载页](https://wps-ai.llteac.cn/download)，但那是上游软件，**不保证包含此 Fork 的 Linux/引用交互修改**。
 
 ### 2. 安装
 
 - **Windows**：运行可信来源的 setup.exe → 完全退出 WPS → 重开 WPS，ribbon 出现「灵犀AI」标签即成功
-- **macOS**：**右键 .pkg → 打开**（Gatekeeper 拦未签名包，双击会报错）→ 输系统密码 → 完全退出 WPS → 重开 WPS
-
 - **Linux**：推荐使用带本机架构 Node 的 `.tar.gz` 完整包，解压后以当前桌面用户运行 `bash install.sh`；具体命令见下方部署指南。
 
 详细步骤（卸载 / 升级 / 故障排查 / 安装器构建）见 [INSTALL.md](INSTALL.md)。
@@ -199,7 +206,7 @@ Get-FileHash .\dist\*-setup.exe -Algorithm SHA256
 
 已有仓库则先 `git fetch origin`、`git switch main`、`git pull --ff-only`，不用再次 clone。构建入口在缺少 Windows Node 时下载内置运行时；若仓库已有 `plugin/runtime/node-win-x64/node.exe`，则直接使用。无需 `npm install`，无需配置 OSS，也不会因为这个构建命令自动上传或创建 GitHub Release。
 
-有 `site/utils/release.ts` 时沿用上游版本源；没有该文件的公开 Fork 使用 `plugin/package.json` 的 `version`，并同步到 manifest 和 Inno Setup。若要发一个新的版本，修改实际生效的版本源再构建。版本为 `1.4.8` 时，产物是 `dist/lingxi-ai-1.4.8-setup.exe`。
+有 `site/utils/release.ts` 时沿用上游版本源；没有该文件的公开 Fork 使用 `plugin/package.json` 的 `version`，并同步到 manifest 和 Inno Setup。若要发一个新的版本，修改实际生效的版本源再构建。版本为 `1.4.9` 时，产物是 `dist/lingxi-ai-1.4.9-setup.exe`。
 
 将 **EXE 和记录的 SHA256 校验值**复制到目标电脑。目标电脑提前装好 WPS，完全退出 WPS 后运行 EXE；安装包内带 Node 和插件，安装脚本只做本地注册和计划任务配置，**无需联网下载安装依赖，也无需目标电脑安装 Git、Node 或 Inno Setup**。内置 PowerShell/任务计划程序需可用，系统策略若禁止脚本或计划任务，安装会失败。无网安装不保证 WPS 自身激活/账号操作离线可用，也不包含模型权重。
 
@@ -303,6 +310,7 @@ plugin/
 ├── css/style.css
 ├── js/
 │   ├── app.js                      # 业务 UI 编排（对话主循环 / 设置 / 时间轴接线）
+│   ├── quick-actions.js / quick-prompt-manager.js  # 快捷功能指令定义 / 提示词设置
 │   ├── openai.js                   # provider 门面（按 config.type 转发）
 │   ├── wps.js / hosts/*            # 宿主分发 + jsapi 桥接（writer / spreadsheet / presentation / pdf）
 │   ├── providers/                  # provider 层
@@ -356,7 +364,7 @@ registry.registerTool({
 
 **加新 provider** —— 新建 `js/providers/<name>.js`，实现 `runWithTools` 等接口后 `WpsAiProviderRegistry.register("<type>", createFn)` 自注册，主链路零改动（详见 `gemini.js` / `openai-responses.js`）。
 
-**加新 ribbon 按钮** —— 编辑 `js/quick-actions.js`，跑 `npm run gen-ribbon`。
+**编辑现有快捷提示词** —— 直接打开「设置 → 快捷提示词」。若需新增 ribbon 功能，才编辑 `js/quick-actions.js` 并运行 `npm run gen-ribbon`。
 
 **永久模式打包** —— `node tools/build-variants.js --out <dist 目录>`。
 
