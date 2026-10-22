@@ -9710,7 +9710,7 @@ body.pure-mode .image-gen-panel.hidden { display: none; }
 .quick-pm-edit-pane { border:1px solid var(--border); border-radius:9px; padding:12px; }
 .quick-pm-editor { min-height:0; flex:1; display:flex; flex-direction:column; }
 .quick-pm-editor h4 { font-size:14px; margin:0 0 8px; }
-#quickPromptEditor { flex:1; min-height:160px; min-width:0; width:100%; resize:none; font:12.5px/1.7 inherit; padding:10px; border:1px solid var(--border); border-radius:7px; background:var(--input-bg, transparent); color:inherit; }
+#quickPromptEditor { flex:1; min-height:160px; min-width:0; width:100%; resize:none; font-size:12.5px; line-height:1.7; font-family:inherit; padding:10px; border:1px solid var(--border); border-radius:7px; background:var(--input-bg, transparent); color:inherit; }
 .quick-pm-footer { display:flex; justify-content:flex-end; align-items:center; gap:7px; padding-top:10px; }
 #quickPromptManagerStatus { margin-right:auto; font-size:12px; opacity:.7; }
 #quickPromptManagerStatus.is-error { color:#dc2626; opacity:1; }
