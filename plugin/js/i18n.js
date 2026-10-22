@@ -201,7 +201,6 @@
     "搜索快捷功能": "Search quick actions",
     "选择快捷功能": "Select a quick action",
     "快捷操作提示词": "Quick action prompt",
-    "保存": "Save",
     "已保存": "Saved",
     "未保存": "Unsaved",
     "已修改": "Customized",
